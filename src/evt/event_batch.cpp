@@ -1,7 +1,5 @@
 #include "event_batch.h"
 
-#include <utility>
-
 
 namespace wlf::evt {
 
