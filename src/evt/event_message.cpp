@@ -47,10 +47,10 @@ namespace wlt::evt {
 	}
 
 
-	EventMessageBuilder::EventMessageBuilder(size_t capacity, size_t fragment_size) 
+	EventMessageBuilder::EventMessageBuilder(size_t capacity, size_t fragment_capacity) 
 		: EventMessage()
         , _capacity(capacity)
-        , _fragment_size(fragment_size)
+        , _fragment_capacity(fragment_capacity)
         , _size(0)
 	{
 	}
@@ -67,13 +67,14 @@ namespace wlt::evt {
         bool has_pending = false;
         char8_t pending_char = u8'\0';
 
+        // A lambda that checks whether escape is required 
         auto needs_escape = [escape](char8_t c) {
             return escape && (c == u8'"' || c == u8'\\');
         };
 
         while (i < size || has_pending) {
-            // When the fragment is full, allocate a new one
-            if (_tail->is_full() && !append_fragment())
+            // Allocate a new fragment if none exists or if the current one is full.
+            if ((_tail == _fragments.end() || _tail->is_full()) && !append_fragment())
                 return false;
 
             // Get the current segment
@@ -117,10 +118,12 @@ namespace wlt::evt {
 
     bool EventMessageBuilder::append_fragment()
 	{
-		if (_size + _fragment_size > _capacity)
+		if (_size + _fragment_capacity > _capacity)
 			return false;
 
-		_tail = _fragments.emplace_after(_tail, _fragment_size);
+		_tail = _fragments.emplace_after(_tail, _fragment_capacity);
+        _size += _fragment_capacity;
+
 		return true;
 	}
 
