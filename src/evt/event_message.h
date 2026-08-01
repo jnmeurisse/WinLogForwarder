@@ -1,5 +1,6 @@
 #pragma once
 
+#define WIN32_LEAN_AND_MEAN
 #include <Windows.h>
 
 #include <charconv>
@@ -8,13 +9,12 @@
 #include <span>
 
 
-namespace wlt::evt {
+namespace wlf::evt {
 
     /**
      * Represents an event message composed of fragmented character buffers.
     */
 	class EventMessage {
-
 	public:
 		class Fragment {
 		public:

@@ -8,7 +8,7 @@
 
 
 
-namespace wlt::evt {
+namespace wlf::evt {
 
 	size_t EventMessage::length() const
 	{
