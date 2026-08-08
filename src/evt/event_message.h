@@ -3,13 +3,16 @@
 #define WIN32_LEAN_AND_MEAN
 #include <Windows.h>
 
+#include <array>
 #include <charconv>
 #include <forward_list>
 #include <memory>
 #include <span>
+#include <string_view>
 
 
 namespace wlf::evt {
+    constexpr size_t max_fragment_size = 512;
 
     /**
      * Represents an event message composed of fragmented character buffers.
@@ -18,7 +21,7 @@ namespace wlf::evt {
 	public:
 		class Fragment {
 		public:
-			Fragment() = delete;
+            Fragment() = delete;
 
             /**
              * Constructs a fragment with the specified capacity (in bytes).
@@ -38,7 +41,7 @@ namespace wlf::evt {
             /**
              * Returns the amount of free space remaining in the fragment.
              */
-			inline size_t free_space() const { return _capacity - _size; }
+			inline size_t free_space() const { return _capacity - size(); }
 
             /**
              * Returns the current number of characters stored in the fragment.
@@ -66,8 +69,8 @@ namespace wlf::evt {
 			size_t _size;
 
             // Underlying character buffer
-			std::unique_ptr<char8_t[]> _data;
-		};
+            std::array<char8_t, max_fragment_size> _buffer;
+        };
 
 		using FragmentList = std::forward_list<Fragment>;
 
@@ -77,10 +80,9 @@ namespace wlf::evt {
 		inline const FragmentList& fragments() const noexcept { return _fragments; }
 
         /**
-         * Calculates and returns the total length of the message across all fragments. 
-         * 
+         * Calculates and returns the total size of the message across all fragments. 
          */
-        size_t length() const;
+        size_t size() const;
 
 	protected:
         // The Collection of message fragments
@@ -93,27 +95,30 @@ namespace wlf::evt {
 	class EventMessageBuilder : public EventMessage {
 	public:
         /**
-         * Constructs a builder with a maximum capacity and a fragment capacity.
+         * Constructs a builder with a maximum capacity.
          */
-        explicit EventMessageBuilder(size_t capacity, size_t fragment_capacity);
+        explicit EventMessageBuilder(size_t capacity);
 
         /**
-         * Writes a sequence of characters to the message buffer.
+         * Writes a sequence of UTF-8 characters to the message buffer.
          * @return true if successful; false if the buffer is full.
          */
-		bool write_chars(const char8_t* str, size_t size, bool escape);
- 
+		bool write_chars(const char8_t* str, size_t size);
+        bool write_chars(const wchar_t* str, size_t size);
+
         /**
 		 * Appends a single character.
 		 * @return true if successful; false if the buffer is full.
 		*/
-        inline bool append(char8_t c) { return write_chars(&c, 1, false); }
+        inline bool append(char8_t c) { return write_chars(&c, 1); }
+        inline bool append(wchar_t c) { return write_chars(&c, 1); }
 
         /**
          * Appends at most count character from a null-terminated UTF-8/ASCII string.
          * @return true if successful; false if the buffer is full.
          */
-        bool append(const char8_t* str, size_t count, bool escape) noexcept;
+        bool append(std::u8string_view strv);
+        bool append(std::wstring_view strv);
 
         /**
          * Formats and appends an integer as an ASCII string.
@@ -130,7 +135,6 @@ namespace wlf::evt {
                    truncated.
          */
         bool append(const ::SYSTEMTIME& st) noexcept;
-        bool append(const ::FILETIME& ft) noexcept;
 
         /**
          * Appends the contents of another EventMessage.
@@ -138,15 +142,17 @@ namespace wlf::evt {
          */
         bool append(const EventMessage& message) noexcept;
 
+        inline size_t capacity() const noexcept { return _capacity;  }
+
+        /**
+        * @return
+        */
+        size_t free_space() const noexcept;
+
+
 	private:
         // Maximum allowed capacity for the builder
 		const size_t _capacity;
-
-        // Capacity of each allocated fragment
-        const size_t _fragment_capacity;
-
-        // Total allocated memory
-		size_t _size;
 
         // A reference to the last fragment
 		FragmentList::iterator _tail;
@@ -166,7 +172,7 @@ namespace wlf::evt {
 
 		// Do not copy more than count characters
 		const size_t len = std::min(count, static_cast<size_t>(ptr - buffer.data()));
-		return append_chars((char8_t*)buffer.data(), len);
+		return write_chars((char8_t*)buffer.data(), len);
 	}
 
 }

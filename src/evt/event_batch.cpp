@@ -1,9 +1,11 @@
 #include "event_batch.h"
 
+#include <span>
+
 
 namespace wlf::evt {
 
-	EventBatch::EventBatch(const EventHandle& subscription) noexcept
+	EventBatch::EventBatch(const EventSubscriptionHandle& subscription) noexcept
 		: _subscription(subscription)
 	{
 	}
@@ -21,8 +23,7 @@ namespace wlf::evt {
 		clear_unconsumed_events();
 
 		// Attempt to fetch the next batch
-		const DWORD events_size = static_cast<DWORD>(_events.size());
-		if (::EvtNext(_subscription.get(), events_size, _events.data(), timeout, 0, &_count)) {
+		if (_subscription.next(std::span<::EVT_HANDLE>(_events), timeout, _count)) {
 			return FetchResult::Continue;
 		}
 
@@ -35,14 +36,14 @@ namespace wlf::evt {
 	}
 
 
-	EventHandle EventBatch::next() noexcept
+	EventLogHandle EventBatch::next() noexcept
 	{
 		if (_next >= _count)
-			return EventHandle();
+			return EventLogHandle();
 
 		// Extract the handle, nullify the array entry to prevent the destructor 
 		// from closing it, and transfer ownership to the caller.
-		EventHandle event{ _events[_next] };
+		EventLogHandle event{ _events[_next] };
 		_events[_next++] = nullptr;
 
 		return event;
@@ -52,10 +53,10 @@ namespace wlf::evt {
 	void EventBatch::clear_unconsumed_events() noexcept
 	{
 		// Close any handles that were fetched but never consumed via next()
-		for (DWORD j = _next; j < _count; ++j) {
-			if (_events[j] != nullptr) {
-				::EvtClose(_events[j]);
-				_events[j] = nullptr;
+		for (DWORD i = _next; i < _count; ++i) {
+			if (_events[i] != nullptr) {
+				::EvtClose(_events[i]);
+				_events[i] = nullptr;
 			}
 		}
 

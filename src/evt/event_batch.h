@@ -5,7 +5,8 @@
 #include <winevt.h>
 
 #include <array>
-#include "evt/event_handle.h"
+#include "evt/event_log_handle.h"
+#include "evt/event_subscription_handle.h"
 
 
 namespace wlf::evt {
@@ -24,7 +25,7 @@ namespace wlf::evt {
         * @param subscription A valid handle to an active event subscription. 
         * Note: EventBatch does NOT take ownership of this subscription handle.        
         */
-        explicit EventBatch(const EventHandle& subscription) noexcept;
+        explicit EventBatch(const EventSubscriptionHandle& subscription) noexcept;
 
         /**
         * Cleans up any fetched event handles that were not consumed.
@@ -53,7 +54,7 @@ namespace wlf::evt {
         * @return an EventHandle. EventHandle is empty if there is no more 
         * event available in the batch.
         */
-        EventHandle next() noexcept;
+        EventLogHandle next() noexcept;
 
     private:
         // Helper to safely close any unconsumed handles in the current batch.
@@ -64,17 +65,17 @@ namespace wlf::evt {
 
         // The active Windows Event Log subscription handle. 
         // Note: This handle is owned by the caller/system, not by this class.
-        const EventHandle& _subscription;
+        const EventSubscriptionHandle& _subscription;
 
         // The internal buffer holding raw event handles for the current batch.
         std::array<::EVT_HANDLE, _batch_size> _events{nullptr};
 
         // The total number of valid, unconsumed events currently sitting in the
         // _events buffer.
-        DWORD _count = 0;
+        ::DWORD _count = 0;
 
         // The array index of the next event to be yielded by the next() method.
-        DWORD _next = 0;
+        ::DWORD _next = 0;
     };
 
 }

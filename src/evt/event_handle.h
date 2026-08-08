@@ -4,7 +4,6 @@
 #include <Windows.h>
 #include <winevt.h>
 
-#include <vector>
 
 namespace wlf::evt {
 
@@ -15,16 +14,6 @@ namespace wlf::evt {
 	 */
 	class EventHandle {
 	public:
-		/**
-		 * Default constructor. Initializes an empty handle.
-		 */
-		EventHandle() = default;
-		
-		/**
-		 * Constructs an EventHandle taking ownership of a native handle.
-		 */
-		explicit EventHandle(::EVT_HANDLE handle) noexcept;
-		
 		/**
 		 * Move constructor.
 		 * Transfers ownership of the handle from another instance.
@@ -58,20 +47,19 @@ namespace wlf::evt {
 		*/
 		explicit inline operator bool() const noexcept { return _handle != nullptr; }
 
-		/**
-		 * Renders the event as XML into a safe vector buffer.
-		 * @param buffer Vector to store the rendered XML wide characters.
-		 * @param size_limit Maximum allowed size for the render operation.
-		 * @return True on success, false on failure.
-		 */
-		bool render_xml(std::vector<wchar_t>& buffer, size_t size_limit) const;
-
-	private:
+	protected:
 		// The native Windows Event Log handle.
 		::EVT_HANDLE _handle = nullptr;
 
-		// Low-level helper to render event XML into a raw buffer.
-		bool render_xml(wchar_t* buffer, ::DWORD& buffer_size) const;
-	};
+        /**
+         * Default constructor. Initializes an empty handle.
+         */
+        EventHandle() = default;
+
+        /**
+         * Constructs an EventHandle taking ownership of a native handle.
+         */
+        explicit EventHandle(::EVT_HANDLE handle) noexcept;
+    };
 
 }

@@ -5,38 +5,39 @@
 #include <cassert>
 #include <charconv>
 #include <cstring>
+#include <memory>
 
 
 
 namespace wlf::evt {
 
-	size_t EventMessage::length() const
+	size_t EventMessage::size() const
 	{
-		size_t length = 0;
+		size_t size = 0;
 		for (auto& fragment : fragments())
-			length += fragment.size();
+            size += fragment.size();
 
-		return length;
+		return size;
 	}
 
 
 	EventMessage::Fragment::Fragment(const size_t capacity)
 		: _capacity(capacity)
 		, _size(0)
-		, _data(std::make_unique<char8_t[]>(capacity))
+        , _buffer{u8'\0'}
 	{
 	}
 
 
-    std::span<const char8_t> evt::EventMessage::Fragment::readable_chars() const
+    std::span<const char8_t> EventMessage::Fragment::readable_chars() const
     {
-        return std::span<const char8_t>(&_data[0], size());
+        return std::span<const char8_t>(_buffer.data(), size());
     }
 
 
-    std::span<char8_t> evt::EventMessage::Fragment::writable_chars()
+    std::span<char8_t> EventMessage::Fragment::writable_chars()
     {
-        return std::span<char8_t>(&_data[_size], free_space());
+        return std::span<char8_t>(&_buffer[_size], free_space());
     }
 
 
@@ -47,15 +48,14 @@ namespace wlf::evt {
 	}
 
 
-	EventMessageBuilder::EventMessageBuilder(size_t capacity, size_t fragment_capacity) 
+	EventMessageBuilder::EventMessageBuilder(size_t capacity) 
 		: EventMessage()
         , _capacity(capacity)
-        , _fragment_capacity(fragment_capacity)
-        , _size(0)
 	{
 	}
 
-	bool EventMessageBuilder::write_chars(const char8_t* str, const size_t size, bool escape)
+
+	bool EventMessageBuilder::write_chars(const char8_t* str, size_t size)
 	{
         if (!str)
             return true;
@@ -63,49 +63,50 @@ namespace wlf::evt {
         // index in source string
         size_t i = 0;
 
-        // Track pending character if an escape sequence splits across segments
-        bool has_pending = false;
-        char8_t pending_char = u8'\0';
-
-        // A lambda that checks whether escape is required 
-        auto needs_escape = [escape](char8_t c) {
-            return escape && (c == u8'"' || c == u8'\\');
-        };
-
-        while (i < size || has_pending) {
-            // Allocate a new fragment if none exists or if the current one is full.
-            if ((_tail == _fragments.end() || _tail->is_full()) && !append_fragment())
+        while (size > 0) {
+            // Allocate a new fragment if none exists or if the current fragment is full.
+            if ((_tail == _fragments.end() || _tail->free_space() < 4) && !append_fragment())
                 return false;
 
             // Get the current segment
             auto segment = _tail->writable_chars();
-            assert(segment.size() > 0);
+            assert(segment.size() >= 4);
 
             // index in the destination segment
             size_t j = 0;
 
-            // Copy characters from the source string to the fragment until
-            // the fragment is full.  When escaping characters, it could occur
-            // that the backslash is in the current segment and the escaped
-            // character is in the next fragment.
-            if (has_pending) {
-                segment.data()[j++] = pending_char;
-                has_pending = false;
-            }
-
-            while (i < size && j < segment.size()) {
-                const char8_t c = str[i++];
-
-                if (needs_escape(c))
-                    segment.data()[j++] = u8'\\';
-
-                if (j < segment.size()) {
-                    segment.data()[j++] = c;
+            while (size > 0 && j < segment.size() - 4)
+            {
+                // 0xxxxxxx -> U+0000..U+007F
+                if ((str[i] & 0x80) == 0x00) {
+                    segment.data()[j++] = str[i++];
+                    size -= 1;
                 }
+                // 110xxxxx -> U+0080..U+07FF
+                else if ((str[i] & 0xE0) == 0xC0 && size >= 2) {
+                    segment.data()[j++] = str[i++];
+                    segment.data()[j++] = str[i++];
+                    size -= 2;
+                }
+                // 1110xxxx -> U+0800-U+FFFF
+                else if ((str[i] & 0xF0) == 0xE0 && size >= 3) {
+                    segment.data()[j++] = str[i++];
+                    segment.data()[j++] = str[i++];
+                    segment.data()[j++] = str[i++];
+                    size -= 3;
+                }
+                // 11110xxx -> U+10000..U+10FFFF
+                else if ((str[i] & 0xF8) == 0xF0 && size >= 4) {
+                    segment.data()[j++] = str[i++];
+                    segment.data()[j++] = str[i++];
+                    segment.data()[j++] = str[i++];
+                    segment.data()[j++] = str[i++];
+                    size -= 4;
+                }
+                // 10xxxxxx or 11111xxx -> invalid
                 else {
-                    // segment is now full; carry the character over
-                    has_pending = true;
-                    pending_char = c;
+                    i += 1;
+                    size -= 1;
                 }
             }
 
@@ -116,25 +117,80 @@ namespace wlf::evt {
 	}
 
 
+    bool EventMessageBuilder::write_chars(const wchar_t* str, size_t size)
+    {
+        constexpr size_t max_char_per_chunk = 512;
+        std::array<char8_t, max_char_per_chunk * 4> utf8_buffer;
+
+        size_t processed_chars = 0;
+
+        while (size > 0) {
+            // Determine chunk size
+            size_t chunk_chars = std::min(size, max_char_per_chunk);
+            
+            const wchar_t* current = str + processed_chars;
+
+            // Prevent splitting a UTF-16 surrogate pair at the chunk boundary
+            if (chunk_chars < size) {
+                // Check if the last character in the chunk is a high surrogate
+                wchar_t last_char = current[chunk_chars - 1];
+                if (last_char >= 0xD800 && last_char <= 0xDBFF) {
+                    // Backtrack by 1 character to keep the surrogate pair together
+                    chunk_chars--;
+                }
+            }
+
+            // Safety check to prevent infinite loops if a single character is huge/malformed
+            if (chunk_chars == 0)
+                break;
+
+            int converted_bytes = ::WideCharToMultiByte(
+                CP_UTF8,
+                0,
+                current,
+                static_cast<int>(chunk_chars),
+                reinterpret_cast<char*>(utf8_buffer.data()),
+                static_cast<int>(utf8_buffer.size()),
+                nullptr,
+                nullptr
+            );
+
+            if (converted_bytes > 0) {
+                if (!write_chars(utf8_buffer.data(), converted_bytes))
+                    return false;
+            }
+            else {
+                // conversion error
+                return false;
+            }
+
+            processed_chars += chunk_chars;
+        }
+
+        return true;
+    }
+
+
+    bool evt::EventMessageBuilder::append(std::u8string_view strv)
+    {
+        return write_chars(strv.data(), strv.size());
+    }
+
+
+    bool EventMessageBuilder::append(std::wstring_view strv)
+    {
+        return write_chars(strv.data(), strv.size());
+    }
+
+
     bool EventMessageBuilder::append_fragment()
 	{
-		if (_size + _fragment_capacity > _capacity)
-			return false;
+        size_t fragment_capacity = std::min(max_fragment_size, free_space());
 
-		_tail = _fragments.emplace_after(_tail, _fragment_capacity);
-        _size += _fragment_capacity;
+        if (fragment_capacity > 0)
+		    _tail = _fragments.emplace_after(_tail, fragment_capacity);
 
-		return true;
-	}
-
-
-	bool EventMessageBuilder::append(const char8_t* str, size_t count, bool escape) noexcept
-	{
-		if (!str)
-			return true;
-
-		const size_t len = std::min(count, std::strlen((char*)str));
-		return write_chars(str, len, escape);
+		return fragment_capacity > 0;
 	}
 
 
@@ -177,27 +233,15 @@ namespace wlf::evt {
 		p = write_num(p, st.wMilliseconds, 3);
 		*p++ = 'Z';
 
-		return write_chars((char8_t *)ts.data(), ts.size(), false);
+		return write_chars((char8_t *)ts.data(), ts.size());
 	}
 
-
-	bool EventMessageBuilder::append(const::FILETIME& ft) noexcept
-	{
-		SYSTEMTIME st;
-		if (!FileTimeToSystemTime(&ft, &st)) {
-			return append('-');
-		}
-		else {
-			return append(st);
-		}
-	}
-
-
-	bool EventMessageBuilder::append(const EventMessage& message) noexcept
+    
+    bool EventMessageBuilder::append(const EventMessage& message) noexcept
 	{
 		for (const auto& fragment : message.fragments()) {
 			const auto fragment_data = fragment.readable_chars();
-			if (!write_chars(fragment_data.data(), fragment_data.size(), false))
+			if (!write_chars(fragment_data.data(), fragment_data.size()))
 				return false;
 		}
 
