@@ -1,5 +1,7 @@
 #include "event_message.h"
 
+#include <combaseapi.h>
+
 #include <algorithm>
 #include <array>
 #include <cassert>
@@ -235,6 +237,16 @@ namespace wlf::evt {
 
 		return write_chars((char8_t *)ts.data(), ts.size());
 	}
+
+
+    bool evt::EventMessageBuilder::append(const::GUID* guid) noexcept
+    {
+        constexpr int buffer_size = 256;
+        std::array<wchar_t, buffer_size> buffer{};
+        
+        const int guid_size = StringFromGUID2(*guid, buffer.data(), buffer_size);
+        return write_chars(buffer.data(), guid_size);
+    }
 
     
     bool EventMessageBuilder::append(const EventMessage& message) noexcept

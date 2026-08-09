@@ -137,6 +137,13 @@ namespace wlf::evt {
         bool append(const ::SYSTEMTIME& st) noexcept;
 
         /**
+         * Formats and appends a GUID as an ASCII string.
+         * @return true if successfully formatted and appended; false if
+         *         truncated.
+         */
+        bool append(const ::GUID* guid) noexcept;
+
+        /**
          * Appends the contents of another EventMessage.
          * @return true if successful; false if the buffer is full.
          */
