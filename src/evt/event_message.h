@@ -9,6 +9,7 @@
 #include <memory>
 #include <span>
 #include <string_view>
+#include <system_error>
 
 
 namespace wlf::evt {
@@ -61,6 +62,8 @@ namespace wlf::evt {
              */
             void advance(size_t count);
 
+            void undo(size_t count);
+
 		private:
             // Maximum capacity of the fragment.
 			const size_t _capacity;
@@ -87,6 +90,9 @@ namespace wlf::evt {
 	protected:
         // The Collection of message fragments
 		FragmentList _fragments;
+
+        // Allocate a message with an empty fragment.
+        EventMessage();
 	};
 
 	using EventMessagePtr = std::shared_ptr<EventMessage> ;
@@ -94,6 +100,19 @@ namespace wlf::evt {
 
 	class EventMessageBuilder : public EventMessage {
 	public:
+        class Guard {
+        public:
+            Guard(EventMessageBuilder& builder);
+            ~Guard();
+
+            bool commit(size_t free_space);
+
+        private:
+            EventMessageBuilder& _builder;
+            bool _commited;
+        };
+
+
         /**
          * Constructs a builder with a maximum capacity.
          */
@@ -157,14 +176,26 @@ namespace wlf::evt {
         size_t free_space() const noexcept;
 
 
+        Guard mark() noexcept;
+
 	private:
         // Maximum allowed capacity for the builder
 		const size_t _capacity;
 
-        // A reference to the last fragment
+        // A reference to the last fragment of the list
 		FragmentList::iterator _tail;
 
-		bool append_fragment();
+        // A reference to the current fragment
+        FragmentList::iterator _current;
+
+        // Saved position.
+        FragmentList::iterator _mark;
+        size_t _offset;
+
+
+		bool append_fragment(size_t min_size);
+        void commit();
+        void rollback();
 	};
 
 

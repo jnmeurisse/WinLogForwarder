@@ -6,9 +6,6 @@
 #include <array>
 #include <cassert>
 #include <charconv>
-#include <cstring>
-#include <memory>
-
 
 
 namespace wlf::evt {
@@ -21,6 +18,12 @@ namespace wlf::evt {
 
 		return size;
 	}
+
+
+    evt::EventMessage::EventMessage()
+        : _fragments{ Fragment(max_fragment_size) }
+    {
+    }
 
 
 	EventMessage::Fragment::Fragment(const size_t capacity)
@@ -50,9 +53,20 @@ namespace wlf::evt {
 	}
 
 
+    void evt::EventMessage::Fragment::undo(size_t count)
+    {
+        assert(count <= _size);
+        _size -= count;
+    }
+
+
 	EventMessageBuilder::EventMessageBuilder(size_t capacity) 
 		: EventMessage()
         , _capacity(capacity)
+        , _tail(_fragments.begin())
+        , _mark(_fragments.begin())
+        , _current(_fragments.begin())
+        , _offset(0)
 	{
 	}
 
@@ -67,52 +81,61 @@ namespace wlf::evt {
 
         while (size > 0) {
             // Allocate a new fragment if none exists or if the current fragment is full.
-            if ((_tail == _fragments.end() || _tail->free_space() < 4) && !append_fragment())
+            // A fragment is considered full if there is no space to copy a whole UTF-8
+            // character (up to 4 bytes).
+            if (_current->free_space() < 4 && !append_fragment(4))
                 return false;
 
             // Get the current segment
-            auto segment = _tail->writable_chars();
-            assert(segment.size() >= 4);
+            auto segment = _current->writable_chars();
+            size_t segment_space = segment.size();
+            char8_t* segment_data = segment.data();
+            assert(segment_space >= 4);
 
             // index in the destination segment
             size_t j = 0;
 
-            while (size > 0 && j < segment.size() - 4)
+            while (size > 0 && j < segment.size() && segment_space >= 4)
             {
                 // 0xxxxxxx -> U+0000..U+007F
                 if ((str[i] & 0x80) == 0x00) {
-                    segment.data()[j++] = str[i++];
+                    segment_data[j++] = str[i++];
                     size -= 1;
+                    segment_space -= 1;
                 }
                 // 110xxxxx -> U+0080..U+07FF
                 else if ((str[i] & 0xE0) == 0xC0 && size >= 2) {
-                    segment.data()[j++] = str[i++];
-                    segment.data()[j++] = str[i++];
+                    segment_data[j++] = str[i++];
+                    segment_data[j++] = str[i++];
                     size -= 2;
+                    segment_space -= 2;
                 }
                 // 1110xxxx -> U+0800-U+FFFF
                 else if ((str[i] & 0xF0) == 0xE0 && size >= 3) {
-                    segment.data()[j++] = str[i++];
-                    segment.data()[j++] = str[i++];
-                    segment.data()[j++] = str[i++];
+                    segment_data[j++] = str[i++];
+                    segment_data[j++] = str[i++];
+                    segment_data[j++] = str[i++];
                     size -= 3;
+                    segment_space -= 3;
                 }
                 // 11110xxx -> U+10000..U+10FFFF
                 else if ((str[i] & 0xF8) == 0xF0 && size >= 4) {
-                    segment.data()[j++] = str[i++];
-                    segment.data()[j++] = str[i++];
-                    segment.data()[j++] = str[i++];
-                    segment.data()[j++] = str[i++];
+                    segment_data[j++] = str[i++];
+                    segment_data[j++] = str[i++];
+                    segment_data[j++] = str[i++];
+                    segment_data[j++] = str[i++];
                     size -= 4;
+                    segment_space -= 4;
                 }
                 // 10xxxxxx or 11111xxx -> invalid
                 else {
                     i += 1;
                     size -= 1;
+                    segment_space -= 1;
                 }
             }
 
-            _tail->advance(j);
+            _current->advance(j);
         }
 
 		return true;
@@ -126,7 +149,7 @@ namespace wlf::evt {
 
         size_t processed_chars = 0;
 
-        while (size > 0) {
+        while (processed_chars < size) {
             // Determine chunk size
             size_t chunk_chars = std::min(size, max_char_per_chunk);
             
@@ -183,17 +206,6 @@ namespace wlf::evt {
     {
         return write_chars(strv.data(), strv.size());
     }
-
-
-    bool EventMessageBuilder::append_fragment()
-	{
-        size_t fragment_capacity = std::min(max_fragment_size, free_space());
-
-        if (fragment_capacity > 0)
-		    _tail = _fragments.emplace_after(_tail, fragment_capacity);
-
-		return fragment_capacity > 0;
-	}
 
 
 	static char* write_num(char* ptr, unsigned short val, int digits) noexcept
@@ -259,5 +271,80 @@ namespace wlf::evt {
 
 		return true;
 	}
+
+
+    size_t EventMessageBuilder::free_space() const noexcept
+    {
+        return _capacity - size();
+    }
+
+
+    EventMessageBuilder::Guard EventMessageBuilder::mark() noexcept
+    {
+        _mark = _current;
+        _offset = _mark->size();
+
+        return Guard(*this);
+    }
+
+
+    bool EventMessageBuilder::append_fragment(size_t min_size)
+    {
+        const size_t fragment_capacity = std::min(max_fragment_size, free_space());
+
+        if (fragment_capacity > min_size) {
+            if (_current != _fragments.end())
+                ++_current;
+
+            if (_current == _fragments.end()) {
+                _tail = _fragments.emplace_after(_tail, fragment_capacity);
+                _current = _tail;
+            }
+        }
+
+        return fragment_capacity > min_size;
+    }
+
+
+    EventMessageBuilder::Guard::Guard(EventMessageBuilder& builder)
+        : _builder(builder)
+        , _commited(false)
+    {
+    }
+
+
+    EventMessageBuilder::Guard::~Guard()
+    {
+        if (!_commited)
+            _builder.rollback();
+    }
+
+
+    bool EventMessageBuilder::Guard::commit(size_t free_space)
+    {
+        if (_builder.free_space() >= free_space) {
+            _builder.commit();
+            _commited = true;
+        }
+
+        return _commited;
+    }
+
+
+    void EventMessageBuilder::commit()
+    {
+        _mark = _fragments.end();
+        _offset = 0;
+    }
+
+
+    void EventMessageBuilder::rollback()
+    {
+        for (auto fragment = _mark; fragment != _fragments.end(); ++fragment)
+            fragment->undo(fragment->size());
+
+        _mark->advance(_offset);
+        _current = _mark;
+    }
 
 }
