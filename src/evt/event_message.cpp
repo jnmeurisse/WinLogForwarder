@@ -64,8 +64,8 @@ namespace wlf::evt {
 		: EventMessage()
         , _capacity(capacity)
         , _tail(_fragments.begin())
-        , _mark(_fragments.begin())
         , _current(_fragments.begin())
+        , _mark(_fragments.begin())
         , _offset(0)
 	{
 	}
