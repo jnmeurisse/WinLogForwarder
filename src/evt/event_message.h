@@ -9,7 +9,6 @@
 #include <memory>
 #include <span>
 #include <string_view>
-#include <system_error>
 
 
 namespace wlf::evt {
