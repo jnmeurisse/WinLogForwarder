@@ -5,11 +5,11 @@
 
 namespace wlf::evt {
 
-    EventRenderer::EventRenderer(Options options, utl::UserCache& user_cache)
-        : _render_system_context(EventLogHandle::RenderContext::create_system_context())
+    EventRenderer::EventRenderer(BufferSize buffer_size, utl::UserCache& user_cache)
+        : _render_context(EventRenderContext::create_system_context())
         , _user_cache(user_cache)
-        , _values_buffer(options.system_data_buffer_size_limit)
-        , _xml_buffer(options.event_data_buffer_size_limit)
+        , _values_buffer(buffer_size.system_data_buffer_size_limit)
+        , _xml_buffer(buffer_size.event_data_buffer_size_limit)
     {
     }
 
@@ -33,10 +33,9 @@ namespace wlf::evt {
 
     bool EventRenderer::render_system_data(const EventLogHandle& event_handle, system_data_t& system_data) noexcept
     {
-        _values_buffer.clear();
         system_data.clear();
 
-        ::DWORD property_count = event_handle.render_values(_render_system_context, _values_buffer);
+        ::DWORD property_count = event_handle.render_values(_render_context, _values_buffer);
         if (property_count == 0)
             return false;
 
@@ -84,14 +83,13 @@ namespace wlf::evt {
     }
 
 
-    void EventRenderer::render_user_account(const ::SID* user_id, account_data_t& account_data) noexcept
+    void EventRenderer::render_user_account(const ::PSID user_id, account_data_t& account_data) noexcept
     {
         account_data.clear();
         _account_buffer.reset();
 
-
         if (user_id)
-            _account_buffer = _user_cache.get_account_info((const ::PSID)user_id);
+            _account_buffer = _user_cache.get_account_info(user_id);
 
         if (_account_buffer)
         {
@@ -104,7 +102,6 @@ namespace wlf::evt {
 
     bool EventRenderer::render_event_xml(const EventLogHandle& event_handle, pugi::xml_document& xml_data) noexcept
     {
-        _xml_buffer.clear();
         xml_data.reset();
 
         // Render in a temporary buffer

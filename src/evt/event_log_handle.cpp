@@ -1,5 +1,7 @@
 #include "event_log_handle.h"
 
+#include "evt/event_error.h"
+
 
 namespace wlf::evt {
 
@@ -15,12 +17,17 @@ namespace wlf::evt {
         if (new_size > _size_limit)
             return false;
 
-        _b.resize(new_size);
+        if (new_size > size()) {
+            // clear before resize to avoid copying the content of the buffer.
+            _b.clear();
+            _b.resize(new_size);
+        }
+
         return true;
     }
 
 
-    EventLogHandle::RenderContext EventLogHandle::RenderContext::create_system_context() noexcept
+    EventRenderContext EventRenderContext::create_system_context()
     {
         const ::EVT_HANDLE handle = ::EvtCreateRenderContext(
             0,
@@ -28,14 +35,16 @@ namespace wlf::evt {
             ::EvtRenderContextSystem
         );
 
-        return RenderContext(handle);
+        if (!handle)
+            throw event_error("EvtCreateRenderContext error", ::GetLastError());
+
+        return EventRenderContext(handle);
     }
 
 
-    EventLogHandle::RenderContext EventLogHandle::RenderContext::create_data_context() noexcept
+    EventRenderContext EventRenderContext::create_data_context() noexcept
     {
-        ::SetLastError(ERROR_SUCCESS);
-        return RenderContext();
+        return EventRenderContext();
     }
 
 
@@ -45,7 +54,7 @@ namespace wlf::evt {
     }
 
 
-    ::DWORD EventLogHandle::render_values(const RenderContext& context, RenderingBuffer& buffer) const
+    ::DWORD EventLogHandle::render_values(const EventRenderContext& context, RenderingBuffer& buffer) const
     {
         ::DWORD buffer_size = buffer.size();
         ::DWORD property_count = 0;
@@ -77,7 +86,7 @@ namespace wlf::evt {
     {
         ::DWORD buffer_size = buffer.size();
         ::DWORD property_count = 0;
-        RenderContext context{};
+        const EventRenderContext context{ EventRenderContext::create_data_context() };
 
         if (!render(context, EvtRenderEventXml, buffer.data(), buffer_size, property_count)) {
             // If the buffer is too small, resize and try once more
@@ -99,7 +108,8 @@ namespace wlf::evt {
     }
 
 
-    bool EventLogHandle::render(const RenderContext& context, ::EVT_RENDER_FLAGS flag, uint8_t* buffer, ::DWORD& buffer_size, ::DWORD& property_count) const
+    bool EventLogHandle::render(const EventRenderContext& context, ::EVT_RENDER_FLAGS flag,
+        uint8_t* buffer, ::DWORD& buffer_size, ::DWORD& property_count) const noexcept
     {
         ::SetLastError(ERROR_SUCCESS);
 
