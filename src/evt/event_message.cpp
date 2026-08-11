@@ -70,6 +70,24 @@ namespace wlf::evt {
 	{
 	}
 
+    
+    static size_t char_size(const char8_t ch) noexcept 
+    {
+        // 0xxxxxxx -> U+0000..U+007F
+        if ((ch & 0x80) == 0x00) return 1;
+
+        // 110xxxxx -> U+0080..U+07FF
+        if ((ch & 0xE0) == 0xC0) return 2;
+
+        // 1110xxxx -> U+0800-U+FFFF
+        if ((ch & 0xF0) == 0xE0) return 3;
+
+        // 11110xxx -> U+10000..U+10FFFF
+        if ((ch & 0xF8) == 0xF0) return 4;
+
+        return 1;
+    }
+
 
 	bool EventMessageBuilder::write_chars(const char8_t* str, size_t size)
 	{
@@ -83,19 +101,21 @@ namespace wlf::evt {
             // Allocate a new fragment if none exists or if the current fragment is full.
             // A fragment is considered full if there is no space to copy a whole UTF-8
             // character (up to 4 bytes).
-            if (_current->free_space() < 4 && !append_fragment(4))
+            const size_t ch_size = char_size(str[i]);
+
+            if (_current->free_space() < ch_size && !append_fragment(ch_size))
                 return false;
 
             // Get the current segment
             auto segment = _current->writable_chars();
             size_t segment_space = segment.size();
             char8_t* segment_data = segment.data();
-            assert(segment_space >= 4);
+            assert(segment_space >= ch_size);
 
             // index in the destination segment
             size_t j = 0;
 
-            while (size > 0 && j < segment.size() && segment_space >= 4)
+            while (size > 0 && j < segment.size() && segment_space >= char_size(str[i]))
             {
                 // 0xxxxxxx -> U+0000..U+007F
                 if ((str[i] & 0x80) == 0x00) {
@@ -131,7 +151,6 @@ namespace wlf::evt {
                 else {
                     i += 1;
                     size -= 1;
-                    segment_space -= 1;
                 }
             }
 
@@ -147,33 +166,29 @@ namespace wlf::evt {
         constexpr size_t max_char_per_chunk = 512;
         std::array<char8_t, max_char_per_chunk * 4> utf8_buffer;
 
-        size_t processed_chars = 0;
-
-        while (processed_chars < size) {
+        while (size > 0) {
             // Determine chunk size
-            size_t chunk_chars = std::min(size, max_char_per_chunk);
-            
-            const wchar_t* current = str + processed_chars;
+            size_t chunk_size = std::min(size, max_char_per_chunk);
 
             // Prevent splitting a UTF-16 surrogate pair at the chunk boundary
-            if (chunk_chars < size) {
+            if (chunk_size < size) {
                 // Check if the last character in the chunk is a high surrogate
-                wchar_t last_char = current[chunk_chars - 1];
+                const wchar_t last_char = str[chunk_size - 1];
                 if (last_char >= 0xD800 && last_char <= 0xDBFF) {
                     // Backtrack by 1 character to keep the surrogate pair together
-                    chunk_chars--;
+                    chunk_size--;
+
+                    // Safety check to prevent infinite loops if a single character is huge/malformed
+                    if (chunk_size == 0)
+                        return false;
                 }
             }
-
-            // Safety check to prevent infinite loops if a single character is huge/malformed
-            if (chunk_chars == 0)
-                break;
 
             int converted_bytes = ::WideCharToMultiByte(
                 CP_UTF8,
                 0,
-                current,
-                static_cast<int>(chunk_chars),
+                str,
+                static_cast<int>(chunk_size),
                 reinterpret_cast<char*>(utf8_buffer.data()),
                 static_cast<int>(utf8_buffer.size()),
                 nullptr,
@@ -182,14 +197,15 @@ namespace wlf::evt {
 
             if (converted_bytes > 0) {
                 if (!write_chars(utf8_buffer.data(), converted_bytes))
-                    return false;
+                    return false;       // buffer overflow
             }
             else {
-                // conversion error
-                return false;
+                return false;           // conversion error
+
             }
 
-            processed_chars += chunk_chars;
+            size -= chunk_size;
+            str += chunk_size;
         }
 
         return true;
