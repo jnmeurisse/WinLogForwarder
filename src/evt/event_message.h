@@ -19,6 +19,11 @@ namespace wlf::evt {
     */
 	class EventMessage {
 	public:
+
+		/**
+		 * Represents a fragment of an event message.  A fragment is a 
+         * sequence of valid utf-8 characters.
+		 */
 		class Fragment {
 		public:
             Fragment() = delete;
@@ -36,17 +41,17 @@ namespace wlf::evt {
             /**
              * Checks if the fragment is fully occupied.
              */
-			inline bool is_full() const { return _size == _capacity; }
+			inline bool is_full() const noexcept { return _size == _capacity; }
 
             /**
              * Returns the amount of free space remaining in the fragment.
              */
-			inline size_t free_space() const { return _capacity - size(); }
+			inline size_t free_space() const noexcept { return _capacity - size(); }
 
             /**
              * Returns the current number of characters stored in the fragment.
              */
-            inline size_t size() const { return _size; }
+            inline size_t size() const noexcept { return _size; }
 
 		private:
 			friend class EventMessageBuilder;
@@ -59,9 +64,12 @@ namespace wlf::evt {
             /**
              * Advances the internal size counter by the given count.
              */
-            void advance(size_t count);
+            void advance(size_t count) noexcept;
 
-            void undo(size_t count);
+            /**
+             * Retreats the internal size counter by the given count.
+             */
+            void retreat(size_t count) noexcept;
 
 		private:
             // Maximum capacity of the fragment.
@@ -70,7 +78,7 @@ namespace wlf::evt {
             // Current number of characters stored in this fragment
 			size_t _size;
 
-            // Underlying character buffer
+            // Underlying characters buffer
             std::array<char8_t, max_fragment_size> _buffer;
         };
 
@@ -84,42 +92,55 @@ namespace wlf::evt {
         /**
          * Calculates and returns the total size of the message across all fragments. 
          */
-        size_t size() const;
+        size_t size() const noexcept;
 
 	protected:
         // The Collection of message fragments
 		FragmentList _fragments;
 
-        // Allocate a message with an empty fragment.
+        // Allocates a message with an empty fragment.
         EventMessage();
 	};
 
 	using EventMessagePtr = std::shared_ptr<EventMessage> ;
 
 
+	/**
+	 * A message builder.
+	 */
 	class EventMessageBuilder : public EventMessage {
 	public:
-        class Guard {
-        public:
-            Guard(EventMessageBuilder& builder);
-            ~Guard();
 
-            bool commit(size_t free_space);
+        class Savepoint {
+        public:
+            Savepoint(EventMessageBuilder& builder) noexcept;
+            ~Savepoint();
+
+            /**
+             * Commits changes in the message builder if the remaining
+             * free space is greater then 'free_space'. 
+             * 
+             * @return true if the changes have been committed.
+             */
+            bool commit(size_t free_space) noexcept;
 
         private:
             EventMessageBuilder& _builder;
             bool _commited;
         };
 
-
         /**
-         * Constructs a builder with a maximum capacity.
+         * Constructs a builder with a maximum capacity (in bytes).
          */
         explicit EventMessageBuilder(size_t capacity);
 
         /**
-         * Writes a sequence of UTF-8 characters to the message buffer.
-         * @return true if successful; false if the buffer is full.
+         * Writes a sequence of UTF-8 characters to the message builder.
+         * 
+         * @param str A sequence of characters.
+         * @param size The number of characters in the given string buffer.
+         * @return true if successful; false if truncated or the sequence of
+         * characters contains an invalid utf-8/wchar character.
          */
 		bool write_chars(const char8_t* str, size_t size);
         bool write_chars(const wchar_t* str, size_t size);
@@ -132,8 +153,11 @@ namespace wlf::evt {
         inline bool append(wchar_t c) { return write_chars(&c, 1); }
 
         /**
-         * Appends at most count character from a null-terminated UTF-8/ASCII string.
-         * @return true if successful; false if the buffer is full.
+         * Appends a sequence of UTF-8 characters from a string view into
+         * the message builder.
+         * 
+         * @return true if successful; false if truncated or the sequence of
+         * characters contains an invalid utf-8/wchar character.
          */
         bool append(std::u8string_view strv);
         bool append(std::wstring_view strv);
@@ -163,19 +187,24 @@ namespace wlf::evt {
 
         /**
          * Appends the contents of another EventMessage.
-         * @return true if successful; false if the buffer is full.
+         * @return true if successful; false if truncated.
          */
         bool append(const EventMessage& message) noexcept;
 
+        /**
+         * Returns the capacity of this builder (in bytes).
+         */
         inline size_t capacity() const noexcept { return _capacity;  }
 
         /**
-        * @return
+        * Returns the remaining space (in bytes) in this builder.
         */
         size_t free_space() const noexcept;
 
-
-        Guard mark() noexcept;
+        /**
+         * Creates a save point.
+         */
+        Savepoint savepoint() noexcept;
 
 	private:
         // Maximum allowed capacity for the builder
@@ -187,14 +216,18 @@ namespace wlf::evt {
         // A reference to the current fragment
         FragmentList::iterator _current;
 
-        // Saved position.
-        FragmentList::iterator _mark;
+        // Saved position (iterator to a fragment and occupied space)
+        FragmentList::iterator _savepoint;
         size_t _offset;
 
-
+        // Append a new fragment having at least 'min_size' bytes
 		bool append_fragment(size_t min_size);
-        void commit();
-        void rollback();
+
+        // Commit pending changes
+        void commit() noexcept;
+
+        // Rollback pending changes.
+        void rollback() noexcept;
 	};
 
 

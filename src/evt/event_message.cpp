@@ -10,22 +10,6 @@
 
 namespace wlf::evt {
 
-	size_t EventMessage::size() const
-	{
-		size_t size = 0;
-		for (auto& fragment : fragments())
-            size += fragment.size();
-
-		return size;
-	}
-
-
-    evt::EventMessage::EventMessage()
-        : _fragments{ Fragment(max_fragment_size) }
-    {
-    }
-
-
 	EventMessage::Fragment::Fragment(const size_t capacity)
 		: _capacity(capacity)
 		, _size(0)
@@ -46,17 +30,33 @@ namespace wlf::evt {
     }
 
 
-    void EventMessage::Fragment::advance(size_t count)
+    void EventMessage::Fragment::advance(size_t count) noexcept
 	{
 		_size += count;
 		assert(_size <= _capacity);
 	}
 
 
-    void evt::EventMessage::Fragment::undo(size_t count)
+    void evt::EventMessage::Fragment::retreat(size_t count) noexcept
     {
         assert(count <= _size);
         _size -= count;
+    }
+
+
+    evt::EventMessage::EventMessage()
+        : _fragments{ Fragment(max_fragment_size) }
+    {
+    }
+
+
+    size_t EventMessage::size() const noexcept
+    {
+        size_t size = 0;
+        for (auto& fragment : fragments())
+            size += fragment.size();
+
+        return size;
     }
 
 
@@ -65,7 +65,7 @@ namespace wlf::evt {
         , _capacity(capacity)
         , _tail(_fragments.begin())
         , _current(_fragments.begin())
-        , _mark(_fragments.begin())
+        , _savepoint(_fragments.end())
         , _offset(0)
 	{
 	}
@@ -295,12 +295,14 @@ namespace wlf::evt {
     }
 
 
-    EventMessageBuilder::Guard EventMessageBuilder::mark() noexcept
+    EventMessageBuilder::Savepoint EventMessageBuilder::savepoint() noexcept
     {
-        _mark = _current;
-        _offset = _mark->size();
+        assert(_savepoint == _fragments.end());
 
-        return Guard(*this);
+        _savepoint = _current;
+        _offset = _savepoint->size();
+
+        return Savepoint(*this);
     }
 
 
@@ -310,7 +312,7 @@ namespace wlf::evt {
 
         if (fragment_capacity > min_size) {
             if (_current != _fragments.end())
-                ++_current;
+                ++_current; // move inside an existing fragment list
 
             if (_current == _fragments.end()) {
                 _tail = _fragments.emplace_after(_tail, fragment_capacity);
@@ -322,21 +324,21 @@ namespace wlf::evt {
     }
 
 
-    EventMessageBuilder::Guard::Guard(EventMessageBuilder& builder)
+    EventMessageBuilder::Savepoint::Savepoint(EventMessageBuilder& builder) noexcept
         : _builder(builder)
         , _commited(false)
     {
     }
 
 
-    EventMessageBuilder::Guard::~Guard()
+    EventMessageBuilder::Savepoint::~Savepoint()
     {
         if (!_commited)
             _builder.rollback();
     }
 
 
-    bool EventMessageBuilder::Guard::commit(size_t free_space)
+    bool EventMessageBuilder::Savepoint::commit(size_t free_space) noexcept
     {
         if (_builder.free_space() >= free_space) {
             _builder.commit();
@@ -347,20 +349,26 @@ namespace wlf::evt {
     }
 
 
-    void EventMessageBuilder::commit()
+    void EventMessageBuilder::commit() noexcept
     {
-        _mark = _fragments.end();
+        assert(_savepoint != _fragments.end());
+
+        _savepoint = _fragments.end();
         _offset = 0;
     }
 
 
-    void EventMessageBuilder::rollback()
+    void EventMessageBuilder::rollback() noexcept
     {
-        for (auto fragment = _mark; fragment != _fragments.end(); ++fragment)
-            fragment->undo(fragment->size());
+        assert(_savepoint != _fragments.end());
 
-        _mark->advance(_offset);
-        _current = _mark;
+        for (auto fragment = _savepoint; fragment != _fragments.end(); ++fragment)
+            fragment->retreat(fragment->size());
+
+        _savepoint->advance(_offset);
+        _current = _savepoint;
+        _savepoint = _fragments.end();
+        _offset = 0;
     }
 
 }
