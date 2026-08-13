@@ -13,7 +13,7 @@ namespace wlf::evt {
 	EventMessage::Fragment::Fragment(const size_t capacity)
 		: _capacity(capacity)
 		, _size(0)
-        , _buffer{u8'\0'}
+        , _buffer()
 	{
 	}
 

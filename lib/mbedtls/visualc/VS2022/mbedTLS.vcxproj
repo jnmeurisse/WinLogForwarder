@@ -391,7 +391,7 @@
       <PreprocessorDefinitions>WIN64;_WINDOWS;MBEDTLS_CONFIG_FILE="../include/configs/winlogfwd_mbedtls_config.h";NDEBUG;_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>../../include</AdditionalIncludeDirectories>
       <CompileAs>CompileAsC</CompileAs>
-      <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
+      <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>

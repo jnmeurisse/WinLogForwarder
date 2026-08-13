@@ -1,0 +1,217 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|Win32">
+      <Configuration>Debug</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|Win32">
+      <Configuration>Release</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Debug|x64">
+      <Configuration>Debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|x64">
+      <Configuration>Release</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <VCProjectVersion>17.0</VCProjectVersion>
+    <Keyword>Win32Proj</Keyword>
+    <ProjectGuid>{400adfbc-6cf2-4433-aa84-4627fa6caa05}</ProjectGuid>
+    <RootNamespace>winlogfwd</RootNamespace>
+    <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v143</PlatformToolset>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v143</PlatformToolset>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v143</PlatformToolset>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v143</PlatformToolset>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Label="Shared">
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <SDLCheck>true</SDLCheck>
+      <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ConformanceMode>true</ConformanceMode>
+    </ClCompile>
+    <Link>
+      <SubSystem>Console</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <SDLCheck>true</SDLCheck>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ConformanceMode>true</ConformanceMode>
+    </ClCompile>
+    <Link>
+      <SubSystem>Console</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <SDLCheck>true</SDLCheck>
+      <PreprocessorDefinitions>NOMINMAX;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ConformanceMode>true</ConformanceMode>
+      <LanguageStandard_C>stdc11</LanguageStandard_C>
+      <AdditionalIncludeDirectories>$(ProjectDir)..\..\src;$(ProjectDir)..\..\lib\mbedtls\include</AdditionalIncludeDirectories>
+      <LanguageStandard>stdcpp20</LanguageStandard>
+      <ScanSourceForModuleDependencies>
+      </ScanSourceForModuleDependencies>
+    </ClCompile>
+    <Link>
+      <SubSystem>Console</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalDependencies>shlwapi.lib;version.lib;crypt32.lib;Bcrypt.lib;Wevtapi.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <SDLCheck>true</SDLCheck>
+      <PreprocessorDefinitions>NOMINMAX;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ConformanceMode>true</ConformanceMode>
+      <LanguageStandard_C>stdc11</LanguageStandard_C>
+      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+      <AdditionalIncludeDirectories>$(ProjectDir)..\..\src;$(ProjectDir)..\..\lib\mbedtls\include</AdditionalIncludeDirectories>
+      <LanguageStandard>stdcpp20</LanguageStandard>
+    </ClCompile>
+    <Link>
+      <SubSystem>Console</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalDependencies>shlwapi.lib;version.lib;crypt32.lib;Bcrypt.lib;Wevtapi.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <LinkTimeCodeGeneration>UseLinkTimeCodeGeneration</LinkTimeCodeGeneration>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\lib\mbedtls\visualc\VS2022\mbedTLS.vcxproj">
+      <Project>{46cf2d25-6a36-4189-b59c-e4815388e554}</Project>
+    </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="..\..\src\evt\event_batch.cpp" />
+    <ClCompile Include="..\..\src\evt\event_collector.cpp" />
+    <ClCompile Include="..\..\src\evt\event_filter.cpp" />
+    <ClCompile Include="..\..\src\evt\event_formatter.cpp" />
+    <ClCompile Include="..\..\src\evt\event_forwarder.cpp" />
+    <ClCompile Include="..\..\src\evt\event_handle.cpp" />
+    <ClCompile Include="..\..\src\evt\event_log_handle.cpp" />
+    <ClCompile Include="..\..\src\evt\event_message.cpp" />
+    <ClCompile Include="..\..\src\evt\event_processor.cpp" />
+    <ClCompile Include="..\..\src\evt\event_queue.cpp" />
+    <ClCompile Include="..\..\src\evt\event_renderer.cpp" />
+    <ClCompile Include="..\..\src\evt\event_subscription.cpp" />
+    <ClCompile Include="..\..\src\evt\event_subscription_handle.cpp" />
+    <ClCompile Include="..\..\src\evt\event_thread.cpp" />
+    <ClCompile Include="..\..\src\evt\event_util.cpp" />
+    <ClCompile Include="..\..\src\evt\event_variants.cpp" />
+    <ClCompile Include="..\..\src\LogCollector.cpp" />
+    <ClCompile Include="..\..\src\main.cpp" />
+    <ClCompile Include="..\..\src\net\endpoint.cpp" />
+    <ClCompile Include="..\..\src\net\socket.cpp" />
+    <ClCompile Include="..\..\src\net\tcpsocket.cpp" />
+    <ClCompile Include="..\..\src\net\tlsconfig.cpp" />
+    <ClCompile Include="..\..\src\net\tlscontext.cpp" />
+    <ClCompile Include="..\..\src\net\tlssocket.cpp" />
+    <ClCompile Include="..\..\src\utl\pugixml.cpp" />
+    <ClCompile Include="..\..\src\utl\signal.cpp" />
+    <ClCompile Include="..\..\src\utl\string.cpp" />
+    <ClCompile Include="..\..\src\utl\system.cpp" />
+    <ClCompile Include="..\..\src\utl\thread.cpp" />
+    <ClCompile Include="..\..\src\utl\timer.cpp" />
+    <ClCompile Include="..\..\src\utl\user_cache.cpp" />
+    <ClCompile Include="..\..\src\WindowsLogService.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\..\src\evt\event_batch.h" />
+    <ClInclude Include="..\..\src\evt\event_collector.h" />
+    <ClInclude Include="..\..\src\evt\event_data.h" />
+    <ClInclude Include="..\..\src\evt\event_error.h" />
+    <ClInclude Include="..\..\src\evt\event_filter.h" />
+    <ClInclude Include="..\..\src\evt\event_formatter.h" />
+    <ClInclude Include="..\..\src\evt\event_forwarder.h" />
+    <ClInclude Include="..\..\src\evt\event_handle.h" />
+    <ClInclude Include="..\..\src\evt\event_log_handle.h" />
+    <ClInclude Include="..\..\src\evt\event_message.h" />
+    <ClInclude Include="..\..\src\evt\event_processor.h" />
+    <ClInclude Include="..\..\src\evt\event_queue.h" />
+    <ClInclude Include="..\..\src\evt\event_renderer.h" />
+    <ClInclude Include="..\..\src\evt\event_subscription.h" />
+    <ClInclude Include="..\..\src\evt\event_subscription_handle.h" />
+    <ClInclude Include="..\..\src\evt\event_thread.h" />
+    <ClInclude Include="..\..\src\evt\event_util.h" />
+    <ClInclude Include="..\..\src\evt\event_variants.h" />
+    <ClInclude Include="..\..\src\LogCollector.h" />
+    <ClInclude Include="..\..\src\net\endpoint.h" />
+    <ClInclude Include="..\..\src\net\socket.h" />
+    <ClInclude Include="..\..\src\net\tcpsocket.h" />
+    <ClInclude Include="..\..\src\net\tlsconfig.h" />
+    <ClInclude Include="..\..\src\net\tlscontext.h" />
+    <ClInclude Include="..\..\src\net\tlssocket.h" />
+    <ClInclude Include="..\..\src\utl\cpptoml.h" />
+    <ClInclude Include="..\..\src\utl\options.h" />
+    <ClInclude Include="..\..\src\utl\pugiconfig.hpp" />
+    <ClInclude Include="..\..\src\utl\pugixml.hpp" />
+    <ClInclude Include="..\..\src\utl\signal.h" />
+    <ClInclude Include="..\..\src\utl\string.h" />
+    <ClInclude Include="..\..\src\utl\system.h" />
+    <ClInclude Include="..\..\src\utl\thread.h" />
+    <ClInclude Include="..\..\src\utl\timer.h" />
+    <ClInclude Include="..\..\src\utl\user_cache.h" />
+    <ClInclude Include="..\..\src\WindowsLogService.h" />
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>

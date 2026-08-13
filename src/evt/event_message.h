@@ -102,7 +102,7 @@ namespace wlf::evt {
         EventMessage();
 	};
 
-	using EventMessagePtr = std::shared_ptr<EventMessage> ;
+	using EventMessagePtr = std::unique_ptr<EventMessage> ;
 
 
 	/**

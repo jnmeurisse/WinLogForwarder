@@ -1,11 +1,11 @@
 #include "event_subscription_handle.h"
 
-#include <stdexcept>
+#include "evt/event_error.h"
 
 
 namespace wlf::evt {
 
-    EventSubscriptionHandle EventSubscriptionHandle::create(const utl::Signal& signal, const std::wstring& channel, const std::wstring& query) noexcept
+    EventSubscriptionHandle EventSubscriptionHandle::create(const utl::Signal& signal, const std::wstring& channel, const std::wstring& query)
     {
         const ::EVT_HANDLE handle = ::EvtSubscribe(
             nullptr,
@@ -17,6 +17,9 @@ namespace wlf::evt {
             nullptr,
             ::EvtSubscribeToFutureEvents
         );
+
+        if (!handle)
+            throw event_error("EvtSubscribe error", ::GetLastError());
 
         return EventSubscriptionHandle(handle);
     }

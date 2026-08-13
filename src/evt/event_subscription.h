@@ -4,8 +4,8 @@
 #include <memory>
 #include <string>
 
-#include "evt/event_handle.h"
 #include "evt/event_processor.h"
+#include "evt/event_subscription_handle.h"
 #include "utl/signal.h"
 
 
@@ -17,14 +17,14 @@ namespace wlf::evt {
 	 * @param event The parsed event instance.
 	 * @return true if the event was processed successfully, false otherwise.
 	 */
-	using EventHandlerCallback = std::function<bool(const EventProcessor::Context& ctx, const EventLogHandle& event)>;
+	using EventHandlerCallback = std::function<ProcessResult(const EventProcessor::Context& ctx, const EventLogHandle& event)>;
 
 
 	/**
 	 * Manages a pull-model subscription to the Windows Event Log.
 	 *
 	 * This class subscribes to future events on a specific channel matching an XPath query.
-	 * It uses a signaled event (utl::Signal) to wake up and fetch new batches of events.
+	 * It uses a signal to wake up and fetch new batches of events.
 	 *
 	 * @note This class is not thread-safe.
 	 */
@@ -33,13 +33,13 @@ namespace wlf::evt {
 		/**
 		 * Configuration options for the Event Log subscription.
 		 */
-		struct Options
+		struct Config
 		{
 			// The event channel to subscribe to (e.g., L"Application").
 			std::wstring channel;
 
-			// The XPath query to filter events (e.g., L"*").
-			std::wstring query;
+            // 
+            EventIdFilter selected_event_id;
 
 			//
 			EventProcessor::Context processing_context;
@@ -53,7 +53,7 @@ namespace wlf::evt {
 		 * 
 		 * @param options The channel and query configuration for the subscription.
 		 */
-		EventSubscription(const Options& options) noexcept;
+		EventSubscription(const Config& options);
 		
 		/**
 		 * Closes the underlying EVT_HANDLE.
@@ -68,7 +68,8 @@ namespace wlf::evt {
 			Continue,   // more events are available; call drain again
 			Completed,  // all events have been drained; wait for a signal to drain again
 			Cancelled,  // The subscription was cancelled
-			Failed		// An error occurred while fetching events.
+			Failed, 	// An error occurred while fetching events.
+            Filtered    // Event was rejected
 		};
 
 		/**
@@ -114,6 +115,9 @@ namespace wlf::evt {
 
 			// Total times an event failed to be processed by the handler.
 			size_t event_failed_count = 0;
+
+            // Total times an event was rejected (filtered)
+            size_t event_filtered_count = 0;
 		};
 
 		/**
@@ -124,24 +128,21 @@ namespace wlf::evt {
 		const stats& get_stats() const noexcept { return _stats; }
 
 		/**
-		 * Returns the underlying signal event used to wake up the subscription.
+		 * Returns the underlying signal used to wake up the subscription.
 		 * 
-		 * @return A reference to the utl::Signal instance.
+		 * @return A reference to the signal instance.
 		 */
 		const utl::Signal& get_signal() const noexcept { return _signal; }
 
 	private:
-		// The underlying event used to signal when new events are available.
+		// A signal raised when new events are available.
 		utl::Signal _signal;
 
 		// The underlying EVT_HANDLE for the subscription.
 		EventSubscriptionHandle _subscription;
 
-		//
+		// 
 		const EventProcessor::Context _processor_context;
-
-		// Subscription Error code
-		DWORD _subscription_error = ERROR_SUCCESS;
 
 		// Indicates whether the subscription has been drained of all available events.
 		bool _drained = false;

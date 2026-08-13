@@ -10,7 +10,7 @@ namespace wlf::evt {
 	class EventFilter {
 	public:
 		virtual ~EventFilter() = default;
-		virtual bool filter(const EventData& event_data, EventMessageBuilder& message) const noexcept;
+		virtual bool filter(const EventData& event_data, EventMessageBuilder& emb) const noexcept;
 	};
 
 	using IEventFilter = std::shared_ptr<EventFilter>;

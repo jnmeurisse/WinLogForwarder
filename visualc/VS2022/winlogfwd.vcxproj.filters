@@ -1,0 +1,230 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
+      <Extensions>cpp;c;cc;cxx;c++;cppm;ixx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
+    </Filter>
+    <Filter Include="Resource Files">
+      <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
+      <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
+    </Filter>
+    <Filter Include="Source Files\net">
+      <UniqueIdentifier>{c3a8cc2e-6dc1-40d0-bff3-0351b1a3a6ad}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\utl">
+      <UniqueIdentifier>{78599bd5-c339-49ba-acaa-566b4843db15}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\evt">
+      <UniqueIdentifier>{8a7a4940-73b0-4ef8-9d54-2fc30ea53009}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="..\..\src\evt\event_handle.cpp">
+      <Filter>Source Files\evt</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\evt\event_batch.cpp">
+      <Filter>Source Files\evt</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\evt\event_processor.cpp">
+      <Filter>Source Files\evt</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\utl\user_cache.cpp">
+      <Filter>Source Files\utl</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\evt\event_message.cpp">
+      <Filter>Source Files\evt</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\utl\pugixml.cpp">
+      <Filter>Source Files\utl</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\evt\event_filter.cpp">
+      <Filter>Source Files\evt</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\evt\event_subscription.cpp">
+      <Filter>Source Files\evt</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\utl\signal.cpp">
+      <Filter>Source Files\utl</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\evt\event_formatter.cpp">
+      <Filter>Source Files\evt</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\evt\event_log_handle.cpp">
+      <Filter>Source Files\evt</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\evt\event_subscription_handle.cpp">
+      <Filter>Source Files\evt</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\evt\event_variants.cpp">
+      <Filter>Source Files\evt</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\evt\event_renderer.cpp">
+      <Filter>Source Files\evt</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\main.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\LogCollector.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\WindowsLogService.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\evt\event_queue.cpp">
+      <Filter>Source Files\evt</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\evt\event_collector.cpp">
+      <Filter>Source Files\evt</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\utl\thread.cpp">
+      <Filter>Source Files\utl</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\evt\event_util.cpp">
+      <Filter>Source Files\evt</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\utl\system.cpp">
+      <Filter>Source Files\utl</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\net\endpoint.cpp">
+      <Filter>Source Files\net</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\utl\string.cpp">
+      <Filter>Source Files\utl</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\net\socket.cpp">
+      <Filter>Source Files\net</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\utl\timer.cpp">
+      <Filter>Source Files\utl</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\net\tlsconfig.cpp">
+      <Filter>Source Files\net</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\net\tlscontext.cpp">
+      <Filter>Source Files\net</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\net\tlssocket.cpp">
+      <Filter>Source Files\net</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\net\tcpsocket.cpp">
+      <Filter>Source Files\net</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\evt\event_forwarder.cpp">
+      <Filter>Source Files\evt</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\evt\event_thread.cpp">
+      <Filter>Source Files\evt</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\..\src\evt\event_handle.h">
+      <Filter>Source Files\evt</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\evt\event_batch.h">
+      <Filter>Source Files\evt</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\evt\event_processor.h">
+      <Filter>Source Files\evt</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\utl\user_cache.h">
+      <Filter>Source Files\utl</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\evt\event_message.h">
+      <Filter>Source Files\evt</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\evt\event_data.h">
+      <Filter>Source Files\evt</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\utl\pugiconfig.hpp">
+      <Filter>Source Files\utl</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\utl\pugixml.hpp">
+      <Filter>Source Files\utl</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\evt\event_filter.h">
+      <Filter>Source Files\evt</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\evt\event_subscription.h">
+      <Filter>Source Files\evt</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\utl\signal.h">
+      <Filter>Source Files\utl</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\evt\event_formatter.h">
+      <Filter>Source Files\evt</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\evt\event_log_handle.h">
+      <Filter>Source Files\evt</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\evt\event_subscription_handle.h">
+      <Filter>Source Files\evt</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\evt\event_variants.h">
+      <Filter>Source Files\evt</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\evt\event_renderer.h">
+      <Filter>Source Files\evt</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\utl\options.h">
+      <Filter>Source Files\utl</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\LogCollector.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\WindowsLogService.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\evt\event_queue.h">
+      <Filter>Source Files\evt</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\evt\event_collector.h">
+      <Filter>Source Files\evt</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\utl\thread.h">
+      <Filter>Source Files\utl</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\evt\event_error.h">
+      <Filter>Source Files\evt</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\evt\event_util.h">
+      <Filter>Source Files\evt</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\utl\system.h">
+      <Filter>Source Files\utl</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\net\endpoint.h">
+      <Filter>Source Files\net</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\utl\string.h">
+      <Filter>Source Files\utl</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\net\socket.h">
+      <Filter>Source Files\net</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\utl\timer.h">
+      <Filter>Source Files\utl</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\net\tlsconfig.h">
+      <Filter>Source Files\net</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\net\tlscontext.h">
+      <Filter>Source Files\net</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\net\tlssocket.h">
+      <Filter>Source Files\net</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\net\tcpsocket.h">
+      <Filter>Source Files\net</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\evt\event_forwarder.h">
+      <Filter>Source Files\evt</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\evt\event_thread.h">
+      <Filter>Source Files\evt</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\utl\cpptoml.h">
+      <Filter>Source Files\utl</Filter>
+    </ClInclude>
+  </ItemGroup>
+</Project>

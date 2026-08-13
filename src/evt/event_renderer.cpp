@@ -5,46 +5,54 @@
 
 namespace wlf::evt {
 
-    EventRenderer::EventRenderer(BufferSize buffer_size, utl::UserCache& user_cache)
+    EventRenderer::EventRenderer(BufferSize buffer_size, utl::UserCache& user_cache, const EventIdFilter& filter)
         : _render_context(EventRenderContext::create_system_context())
         , _user_cache(user_cache)
         , _values_buffer(buffer_size.system_data_buffer_size_limit)
         , _xml_buffer(buffer_size.event_data_buffer_size_limit)
+        , _id_filter(filter)
     {
     }
 
 
-    bool EventRenderer::render_event(const EventLogHandle& event_handle, EventData& event_data) noexcept
+    RenderStatus EventRenderer::render_event(const EventLogHandle& event_handle, EventData& event_data) noexcept
     {
-        if (!render_system_data(event_handle, event_data.system_data))
-            return false;
+        const RenderStatus status = render_system_data(event_handle, event_data.system_data);
 
-        // Get the account name from the user ID if available
-        render_user_account(event_data.system_data.user_id, event_data.account_data);
+        if (status == RenderStatus::Success) {
+            // Get the account name from the user ID if available
+            render_user_account(event_data.system_data.user_id, event_data.account_data);
 
-        // Get the xml data.  We do not consider the returned status.  In 
-        // case of rendering error, we do not return the xml message.
-        if (!render_event_xml(event_handle, event_data.xml_doc))
-            event_data.xml_doc.reset();
+            // Get the xml data.  We do not consider the returned status.  In 
+            // case of rendering error, we do not return the xml message.
+            if (!render_event_xml(event_handle, event_data.xml_doc))
+                event_data.xml_doc.reset();
+        }
 
-        return true;
+        return status;
     }
 
 
-    bool EventRenderer::render_system_data(const EventLogHandle& event_handle, system_data_t& system_data) noexcept
+    RenderStatus EventRenderer::render_system_data(const EventLogHandle& event_handle, system_data_t& system_data) noexcept
     {
         system_data.clear();
 
         ::DWORD property_count = event_handle.render_values(_render_context, _values_buffer);
         if (property_count == 0)
-            return false;
+            return RenderStatus::Failed;
 
         // Extract log information from the buffer
         EventVariants variants(_values_buffer.data(), property_count);
 
+        // Check if this event ID is selected
+        system_data.event_id = variants.get_uint16(EvtSystemEventID);
+        if (_id_filter.size() > 0 && system_data.event_id.has_value()) {
+            if (_id_filter.count(system_data.event_id.value()) == 0)
+                return RenderStatus::Filtered;
+        }
+
         system_data.provider_name = variants.get_string(EvtSystemProviderName);
         system_data.provider_guid = variants.get_guid(EvtSystemProviderGuid);
-        system_data.event_id = variants.get_uint16(EvtSystemEventID);
         system_data.qualifiers = variants.get_uint16(EvtSystemQualifiers);
         system_data.level = variants.get_byte(EvtSystemLevel);
         system_data.task = variants.get_uint16(EvtSystemTask);
@@ -61,7 +69,7 @@ namespace wlf::evt {
         system_data.user_id = variants.get_sid(EvtSystemUserID);
         system_data.version = variants.get_byte(EvtSystemVersion);
 
-        return true;
+        return RenderStatus::Success;
     }
 
 

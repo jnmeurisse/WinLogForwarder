@@ -7,9 +7,10 @@
 
 namespace wlf::utl {
 
-    Signal::Signal(bool manual_reset)
+    Signal::Signal(bool manual_reset) :
+        _handle(::CreateEvent(nullptr, manual_reset, false, nullptr))
+
 	{
-		_handle = ::CreateEvent(nullptr, manual_reset, false, nullptr);
 		if (_handle == nullptr)
 			throw std::runtime_error("CreateEvent error");
 	}

@@ -17,7 +17,7 @@ namespace wlf::utl {
         Signal() = delete;
 
 		/**
-		 * Creates an event.
+		 * Creates a signal.
 		*/
 		explicit Signal(bool manual_reset);
 
@@ -27,12 +27,12 @@ namespace wlf::utl {
         Signal& operator=(Signal&& other) noexcept;
 
 		/**
-		 * Destroys this signal
+		 * Destroys this signal.
 		*/
 		~Signal();
 
 		/**
-		 * Sets the event to a non-signaled state.
+		 * Sets the signal to a non-signaled state.
 		 *
 		 * The method returns false if the function failed.
 		*/
@@ -48,25 +48,25 @@ namespace wlf::utl {
 		/**
 		 * Returns true if this signal is in a signaled state.
 		 *
-		 * The method raises an winapi_error if an error has occurred.
+		 * The method raises a runtime_error if an error has occurred.
 		*/
 		bool is_set() const;
 
 		/**
 		 * Waits until the event is in a signaled state.
 		 * 
-		 * The method raises an winapi_error if an error has occurred.
+		 * The method raises a runtime_error if an error has occurred.
 		*/
 		bool wait(DWORD timeout = INFINITE) const;
 
 		/**
-		 * Returns the Signal handle.
+		 * Returns the signal handle.
 		*/
 		inline HANDLE get_handle() const noexcept { return _handle; }
 
 	private:
 		// The event handle.
-		HANDLE _handle = nullptr;
+		HANDLE _handle;
 	};
 
 }

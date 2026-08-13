@@ -10,35 +10,35 @@ namespace wlf::evt {
     }
 
 
-    ::UINT8 EventVariants::get_byte(unsigned int property_id) const
+    std::optional<::UINT8> EventVariants::get_byte(unsigned int property_id) const
     {
         return (property_id >= _property_count) || (EvtVarTypeByte != _variants[property_id].Type)
-            ? 0
-            : _variants[property_id].ByteVal;
+            ? std::nullopt
+            : std::optional<::UINT8>{ _variants[property_id].ByteVal };
     }
 
 
-    ::UINT16 EventVariants::get_uint16(unsigned int property_id) const
+    std::optional<::UINT16> EventVariants::get_uint16(unsigned int property_id) const
     {
         return (property_id >= _property_count) || (EvtVarTypeUInt16 != _variants[property_id].Type)
-            ? 0
-            : _variants[property_id].UInt16Val;
+            ? std::nullopt
+            : std::optional<::UINT16>{ _variants[property_id].UInt16Val };
     }
 
 
-    ::UINT32 EventVariants::get_uint32(unsigned int property_id) const
+    std::optional<::UINT32> EventVariants::get_uint32(unsigned int property_id) const
     {
         return (property_id >= _property_count) || (EvtVarTypeUInt32 != _variants[property_id].Type)
-            ? 0
-            : _variants[property_id].UInt32Val;
+            ? std::nullopt
+            : std::optional<::UINT32>{ _variants[property_id].UInt32Val };
     }
 
 
-    ::UINT64 EventVariants::get_uint64(unsigned int property_id) const
+    std::optional<::UINT64> EventVariants::get_uint64(unsigned int property_id) const
     {
         return (property_id >= _property_count) || (EvtVarTypeUInt64 != _variants[property_id].Type)
-            ? 0
-            : _variants[property_id].UInt64Val;
+            ? std::nullopt
+            : std::optional<::UINT64>{ _variants[property_id].UInt32Val };
     }
 
 
@@ -69,7 +69,7 @@ namespace wlf::evt {
     }
 
 
-    ::SID* EventVariants::get_sid(unsigned int property_id) const
+    ::PSID EventVariants::get_sid(unsigned int property_id) const
     {
         return (property_id >= _property_count) || (EvtVarTypeSid != _variants[property_id].Type)
             ? nullptr

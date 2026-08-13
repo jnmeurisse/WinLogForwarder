@@ -1,22 +1,15 @@
 #include "event_subscription.h"
-#include <stdexcept>
-#include <utility>
 
 #include "evt/event_batch.h"
 
 
 namespace wlf::evt {
 
-
-	EventSubscription::EventSubscription(const Options& options) noexcept
+	EventSubscription::EventSubscription(const Config& config)
 		: _signal(true)
-		, _subscription(_signal, options.channel, options.query)
-		, _processor_context(options.processing_context)
+		, _subscription(EventSubscriptionHandle::create(_signal, config.channel, L"*"))
+		, _processor_context(config.processing_context)
 	{
-		if (!_subscription) {
-			_subscription_error = _subscription.error();
-			_cancelled = true;
-		}
 	}
 
 
@@ -37,7 +30,7 @@ namespace wlf::evt {
 		// Fetch the next batch of events from the subscription.
 		EventBatch batch(_subscription);
 		const auto fetch_result = batch.fetch(0);
-		_stats.fetch_count++;
+        ++_stats.fetch_count;
 
 		// Handle the result of the fetch operation.
 		switch (fetch_result) {
@@ -47,10 +40,14 @@ namespace wlf::evt {
 			// The handler could return false if it fails to format the event
 			// log or if it encounters an error during processing.
 			while (auto event = batch.next()) {
-				_stats.event_count++;
-				if (!handler(_processor_context, event))
-					_stats.event_failed_count++;
-			}
+                const ProcessResult result = handler(_processor_context, event);
+                if (result == ProcessResult::Filtered)
+                    ++_stats.event_filtered_count;
+                else if (result == ProcessResult::Failed)
+                    _stats.event_failed_count++;
+                else
+                    ++_stats.event_count;
+            }
 
 			return DrainResult::Continue;
 
