@@ -1,3 +1,10 @@
+/*!
+* This file is part of WindowsLogForwarder
+*
+* Copyright (C) 2026 Jean-Noel Meurisse
+* SPDX-License-Identifier: GPL-3.0-only
+*
+*/
 #pragma once
 
 #define WIN32_LEAN_AND_MEAN
@@ -37,13 +44,14 @@ namespace wlf::evt {
             Continue,   // Process this batch and fetch again
             Completed,  // Process this batch; nothing more to fetch
 			Cancelled,  // The subscription was cancelled
-            Failed
+            Failed      // Fetch has failed
         };
 
         /** 
          * Fetches the next batch of events into the internal buffer.
          * 
-         * @param timeout The maximum time (in ms) to block while waiting for events.
+         * @param timeout The maximum time (in ms) to block while waiting
+         *                for events.
          * @return FetchResult indicating if more events are available.
         */
         FetchResult fetch(DWORD timeout) noexcept;
@@ -51,8 +59,8 @@ namespace wlf::evt {
         /**
         * Retrieves the next available event from the current batch.
         * 
-        * @return an EventHandle. EventHandle is empty if there is no more 
-        * event available in the batch.
+        * @return an EventLogHandle. The returned handle is empty if there
+        *         is no event available in the batch.
         */
         EventLogHandle next() noexcept;
 
