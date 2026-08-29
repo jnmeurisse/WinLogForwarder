@@ -2,13 +2,12 @@
 
 #include <windows.h>
 #include <string>
-#include "LogCollector.h"
 
 
 class WindowsLogService {
 public:
     // Constructor takes the internal service name and the display name
-    WindowsLogService(const std::wstring& service_name, const std::wstring& display_name, wlf::LogCollector& collector);
+    WindowsLogService(const std::wstring& service_name, const std::wstring& display_name);
     ~WindowsLogService();
 
     // Main entry point to parse command line and run
@@ -17,7 +16,6 @@ public:
 private:
     std::wstring _service_name;
     std::wstring _display_name;
-    wlf::LogCollector& _collector;
     ::SERVICE_STATUS_HANDLE _status_handle;
     ::SERVICE_STATUS _status;
 

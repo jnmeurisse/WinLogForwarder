@@ -1,28 +1,49 @@
 #include "user_cache.h"
 
-#include <sddl.h>
+#include <string_view>
+#include "utl/exception.h"
+#include <mutex>
 
 
 namespace wlf::utl {
 
-	static std::wstring sid_to_string(const ::PSID psid)
+    UserSID::UserSID(const::PSID psid)
+    {
+        if (psid && ::IsValidSid(psid)) {
+            _sid_size = ::GetLengthSid(psid);
+            
+            if (_sid_size > _sid.size())
+                throw utl::os_error("UserSID::UserSID - buffer size", ERROR_INSUFFICIENT_BUFFER);
+
+            if (!CopySid(_sid_size, _sid.data(), psid))
+                throw utl::os_error("UserSID::UserSID - copy sid", ::GetLastError());
+
+            _hash = std::hash<std::string_view>()({
+                        reinterpret_cast<char *>(_sid.data()),
+                        _sid_size
+                    });
+        }
+    }
+
+
+    bool UserSID::operator==(const UserSID& other) const
+    {
+        return
+            (this->valid() && other.valid()) &&
+            (::EqualSid(sid(), other.sid()));
+    }
+
+
+    size_t UserSID::HashFunction::operator()(const UserSID& sid) const
+    {
+        return sid._hash;
+    }
+
+
+	static bool lookup_account_sid(const UserSID& user_sid, UserAccountInfo& account_info)
 	{
-		std::wstring sid_string;
-
-		::LPWSTR buffer = nullptr;
-		if (psid && ::ConvertSidToStringSidW(psid, &buffer)) {
-			sid_string.assign(buffer);
-			::LocalFree(buffer);
-		}
-
-		return sid_string;
-	}
-
-
-	static bool lookup_account_sid(::PSID psid, UserAccountInfo& account_info)
-	{
-		if (!psid || !::IsValidSid(psid))
-			return false;
+		if (!user_sid.valid()) 
+            return false;
 
 		::DWORD name_size = static_cast<DWORD>(account_info.user_name.size());
 		::DWORD domain_size = static_cast<DWORD>(account_info.domain.size());
@@ -33,7 +54,7 @@ namespace wlf::utl {
 
 		BOOL success = ::LookupAccountSidW(
 			nullptr,
-			psid,
+			user_sid.sid(),
 			account_info.user_name.data(),
 			&name_size,
 			account_info.domain.data(),
@@ -51,16 +72,15 @@ namespace wlf::utl {
 	}
 
 
-	const UserAccountInfoPtr UserCache::get_account_info(const ::PSID psid)
+	const UserAccountInfoPtr UserCache::get_account_info(const UserSID& user_sid)
 	{
-		std::wstring sid_key{ sid_to_string(psid) };
-		if (sid_key.empty())
+        if (!user_sid.valid())
 			return nullptr;
 
 		std::lock_guard<std::mutex> lock(_mutex);
 
 		// Check cache first.
-		auto it = _sid_cache.find(sid_key);
+		auto it = _sid_cache.find(user_sid);
 		if (it != _sid_cache.end()) {
 			// it->second is the iterator. We move it to the front.
 			_sid_lru_list.splice(_sid_lru_list.begin(), _sid_lru_list, it->second);
@@ -71,7 +91,7 @@ namespace wlf::utl {
 
 		// Cache miss, resolve the sid.
 		auto account_info = std::make_shared<UserAccountInfo>();
-		if (!lookup_account_sid(psid, *account_info))
+		if (!lookup_account_sid(user_sid, *account_info))
 			return nullptr;
 
 		// Enforce cache size limit.
@@ -81,8 +101,8 @@ namespace wlf::utl {
 		}
 
 		// Insert a new entry at the front of the LRU list.
-		_sid_lru_list.push_front({ sid_key, account_info });
-		_sid_cache[sid_key] = _sid_lru_list.begin();
+		_sid_lru_list.push_front({ user_sid, account_info });
+		_sid_cache[user_sid] = _sid_lru_list.begin();
 
 		// Return the newly cached account
 		return _sid_lru_list.front().second;

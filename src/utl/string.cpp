@@ -1,9 +1,46 @@
 #include "string.h"
 
+#define WIN32_LEAN_AND_MEAN
+#include <Windows.h>
+
 #include <cstdlib>
 #include <cerrno>
+#include <vector>
+#include <algorithm>
+#include <cctype>
+#include <cstring>
+
 
 namespace wlf::utl {
+
+    bool icomp::operator()(const std::string& lhs, const std::string& rhs) const noexcept
+    {
+        return ::_stricmp(lhs.c_str(), rhs.c_str()) < 0;
+    }
+
+
+    size_t split(const char* str, const char delim, std::vector<std::string>& parts)
+    {
+        const size_t count = parts.size();
+
+        do {
+            const char* const begin = str;
+
+            while (*str != delim && *str)
+                str++;
+
+            parts.emplace_back(begin, str);
+        } while (0 != *str++);
+
+        return parts.size() - count;
+    }
+
+
+    size_t split(const std::string& str, const char delim, std::vector<std::string>& parts)
+    {
+        return split(str.c_str(), delim, parts);
+    }
+
 
     bool str2num(const std::string& numstr, const int radix, const long minval, const long maxval, long& value)
     {
@@ -74,5 +111,52 @@ namespace wlf::utl {
     {
         return str.length() == 0 ? str : trimleft(trimright(str));
     }
+
+
+    std::string lower(const std::string& str)
+    {
+        std::string tmp = str;
+        std::transform(tmp.begin(), tmp.end(), tmp.begin(), tolower);
+
+        return tmp;
+    }
+
+
+    std::string upper(const std::string& str)
+    {
+        std::string tmp = str;
+        std::transform(tmp.begin(), tmp.end(), tmp.begin(), toupper);
+
+        return tmp;
+    }
+
+
+    static bool icheq(unsigned char a, unsigned char b) noexcept
+    {
+        return std::tolower(a) == std::tolower(b);
+    }
+
+
+    bool iequal(std::string const& s1, std::string const& s2)
+    {
+        return (s1.length() == s2.length()) && std::equal(s2.begin(), s2.end(), s1.begin(), icheq);
+    }
+
+
+    std::wstring str2wstr(const std::string& str)
+    {
+        const int size = ::MultiByteToWideChar(
+            CP_UTF8, 0,
+            str.data(), (int)str.size(),
+            nullptr, 0);
+        std::vector<wchar_t> result(size, 0);
+
+        ::MultiByteToWideChar(CP_UTF8, 0,
+            str.data(), (int)str.size(),
+            result.data(), (int)result.size());
+
+        return std::wstring(result.data(), result.size());
+    }
+
 
 }

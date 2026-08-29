@@ -1,73 +1,71 @@
 #include "event_renderer.h"
 
 #include "evt/event_variants.h"
+#include "evt/event_log_handle.h"
+#include "utl/exception.h"
 
 
 namespace wlf::evt {
 
-    EventRenderer::EventRenderer(BufferSize buffer_size, utl::UserCache& user_cache, const EventIdFilter& filter)
+
+    EventRenderer::EventRenderer(const BufferSize& buffer_size, utl::UserCache& user_cache)
         : _render_context(EventRenderContext::create_system_context())
         , _user_cache(user_cache)
         , _values_buffer(buffer_size.system_data_buffer_size_limit)
         , _xml_buffer(buffer_size.event_data_buffer_size_limit)
-        , _id_filter(filter)
     {
     }
 
 
-    RenderStatus EventRenderer::render_event(const EventLogHandle& event_handle, EventData& event_data) noexcept
+    RenderStatus EventRenderer::render_event(const EventLogHandle& elh, EventData& ed) noexcept
     {
-        const RenderStatus status = render_system_data(event_handle, event_data.system_data);
+        const RenderStatus status = render_system_data(elh, ed.system_data);
 
         if (status == RenderStatus::Success) {
             // Get the account name from the user ID if available
-            render_user_account(event_data.system_data.user_id, event_data.account_data);
+            render_user_account(ed.system_data.user_id, ed.account_data);
 
             // Get the xml data.  We do not consider the returned status.  In 
             // case of rendering error, we do not return the xml message.
-            if (!render_event_xml(event_handle, event_data.xml_doc))
-                event_data.xml_doc.reset();
+            if (!render_event_xml(elh, ed.xml_doc))
+                ed.xml_doc.reset();
         }
 
         return status;
     }
 
 
-    RenderStatus EventRenderer::render_system_data(const EventLogHandle& event_handle, system_data_t& system_data) noexcept
+    RenderStatus EventRenderer::render_system_data(const EventLogHandle& elh, SystemData& sd) noexcept
     {
-        system_data.clear();
-
-        ::DWORD property_count = event_handle.render_values(_render_context, _values_buffer);
-        if (property_count == 0)
-            return RenderStatus::Failed;
+        ::DWORD property_count = elh.render_values(_render_context, _values_buffer);
+        if (property_count == 0) {
+            return ::GetLastError() == ERROR_BUFFER_OVERFLOW
+                ? RenderStatus::Overflow
+                : RenderStatus::Failed;
+        }
 
         // Extract log information from the buffer
         EventVariants variants(_values_buffer.data(), property_count);
 
-        // Check if this event ID is selected
-        system_data.event_id = variants.get_uint16(EvtSystemEventID);
-        if (_id_filter.size() > 0 && system_data.event_id.has_value()) {
-            if (_id_filter.count(system_data.event_id.value()) == 0)
-                return RenderStatus::Filtered;
-        }
-
-        system_data.provider_name = variants.get_string(EvtSystemProviderName);
-        system_data.provider_guid = variants.get_guid(EvtSystemProviderGuid);
-        system_data.qualifiers = variants.get_uint16(EvtSystemQualifiers);
-        system_data.level = variants.get_byte(EvtSystemLevel);
-        system_data.task = variants.get_uint16(EvtSystemTask);
-        system_data.opcode = variants.get_byte(EvtSystemOpcode);
-        system_data.keywords = variants.get_uint64(EvtSystemKeywords);
-        system_data.time_created = variants.get_time(EvtSystemTimeCreated);
-        system_data.event_record_id = variants.get_uint64(EvtSystemEventRecordId);
-        system_data.activity_id = variants.get_guid(EvtSystemActivityID);
-        system_data.related_activity_id = variants.get_guid(EvtSystemRelatedActivityID);
-        system_data.process_id = variants.get_uint32(EvtSystemProcessID);
-        system_data.thread_id = variants.get_uint32(EvtSystemThreadID);
-        system_data.channel = variants.get_string(EvtSystemChannel);
-        system_data.computer = variants.get_string(EvtSystemComputer);
-        system_data.user_id = variants.get_sid(EvtSystemUserID);
-        system_data.version = variants.get_byte(EvtSystemVersion);
+        // Load all other properties
+        sd.provider_name = variants.get_string(EvtSystemProviderName);
+        sd.provider_guid = variants.get_guid(EvtSystemProviderGuid);
+        sd.event_id = variants.get_uint16(EvtSystemEventID);
+        sd.qualifiers = variants.get_uint16(EvtSystemQualifiers);
+        sd.level = variants.get_byte(EvtSystemLevel);
+        sd.task = variants.get_uint16(EvtSystemTask);
+        sd.opcode = variants.get_byte(EvtSystemOpcode);
+        sd.keywords = variants.get_uint64(EvtSystemKeywords);
+        sd.time_created = variants.get_time(EvtSystemTimeCreated);
+        sd.event_record_id = variants.get_uint64(EvtSystemEventRecordId);
+        sd.activity_id = variants.get_guid(EvtSystemActivityID);
+        sd.related_activity_id = variants.get_guid(EvtSystemRelatedActivityID);
+        sd.process_id = variants.get_uint32(EvtSystemProcessID);
+        sd.thread_id = variants.get_uint32(EvtSystemThreadID);
+        sd.channel = variants.get_string(EvtSystemChannel);
+        sd.computer = variants.get_string(EvtSystemComputer);
+        sd.user_id = variants.get_sid(EvtSystemUserID);
+        sd.version = variants.get_byte(EvtSystemVersion);
 
         return RenderStatus::Success;
     }
@@ -91,35 +89,38 @@ namespace wlf::evt {
     }
 
 
-    void EventRenderer::render_user_account(const ::PSID user_id, account_data_t& account_data) noexcept
+    void EventRenderer::render_user_account(const ::PSID user_id, AccountData& account_data) noexcept
     {
-        account_data.clear();
         _account_buffer.reset();
 
-        if (user_id)
-            _account_buffer = _user_cache.get_account_info(user_id);
+        try {
+            utl::UserSID user_sid(user_id);
 
-        if (_account_buffer)
-        {
-            account_data.name = _account_buffer->user_name.data();
-            account_data.domain = _account_buffer->domain.data();
-            account_data.type = sid_name_use_to_string(_account_buffer->account_type);
+            if (user_sid.valid()) {
+                _account_buffer = _user_cache.get_account_info(user_sid);
+                if (_account_buffer) {
+                    account_data.name = _account_buffer->user_name.data();
+                    account_data.domain = _account_buffer->domain.data();
+                    account_data.type = sid_name_use_to_string(_account_buffer->account_type);
+                }
+            }
+        }
+        catch (const utl::os_error&) {
         }
     }
 
 
-    bool EventRenderer::render_event_xml(const EventLogHandle& event_handle, pugi::xml_document& xml_data) noexcept
+    bool EventRenderer::render_event_xml(const EventLogHandle& elh, pugi::xml_document& xml_data) noexcept
     {
-        xml_data.reset();
-
         // Render in a temporary buffer
-        if (!event_handle.render_xml(_xml_buffer))
+        const ::DWORD buffer_size = elh.render_xml(_xml_buffer);
+        if (buffer_size == 0)
             return false;
 
         // Load the XML document
         const pugi::xml_parse_result result = xml_data.load_buffer_inplace(
             _xml_buffer.data(),
-            _xml_buffer.size(),
+            buffer_size,
             pugi::parse_default,
             pugi::xml_encoding::encoding_wchar
         );

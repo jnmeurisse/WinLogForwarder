@@ -33,11 +33,6 @@ namespace wlf::net {
 		explicit Endpoint(const std::string& address, const uint16_t default_port);
 
 		/**
-		 * Converts this Endpoint to a printable string.
-		*/
-		std::string to_string() const;
-
-		/**
 		 * Returns the host name from this end point.
 		*/
 		inline const std::string& hostname() const noexcept { return _hostname; }

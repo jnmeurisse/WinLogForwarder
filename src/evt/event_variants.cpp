@@ -1,4 +1,5 @@
 #include "event_variants.h"
+#include <cassert>
 
 
 namespace wlf::evt {
@@ -7,6 +8,7 @@ namespace wlf::evt {
         : _variants(reinterpret_cast<const ::EVT_VARIANT*>(buffer))
         , _property_count(property_count)
     {
+        assert(buffer != nullptr);
     }
 
 

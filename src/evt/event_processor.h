@@ -1,15 +1,13 @@
 #pragma once
 
-#define WIN32_LEAN_AND_MEAN
-#include <Windows.h>
-
-#include "evt/event_formatter.h"
+#include "global.h"
 #include "evt/event_filter.h"
+#include "evt/event_formatter.h"
 #include "evt/event_log_handle.h"
 #include "evt/event_message.h"
 #include "evt/event_renderer.h"
-#include "evt/event_util.h"
-#include "utl/user_cache.h"
+#include "evt/event_types.h"
+
 
 
 namespace wlf::evt {
@@ -19,7 +17,18 @@ namespace wlf::evt {
         Filtered,
         Failed
     };
-    
+
+
+    struct EventProcessContext {
+        const EventFilterPtr filter;
+        const EventFormatterPtr formatter;
+
+        inline size_t max_message_size() const noexcept {
+            return formatter ? formatter->max_message_size() : MinMaxSyslogMsgLength;
+        }
+    };
+
+
     /**
      * Processes Windows Event Log records by rendering, filtering, and formatting them.
      *
@@ -29,21 +38,6 @@ namespace wlf::evt {
     */
     class EventProcessor {
     public:
-        struct Config {
-            EventRenderer::BufferSize rendering_buffer_size;
-            utl::UserCache& user_cache;
-            EventIdFilter selected_event_id;
-        };
-
-
-        struct Context {
-            ::DWORD max_message_size;
-            IEventFilter filter;
-            //IEventTransformer rewriter;
-            IEventFormatter formatter;
-
-        };
-
         EventProcessor() = delete;
 
         /**
@@ -51,7 +45,7 @@ namespace wlf::evt {
          * 
          * @throws std::event_error If the underlying EVT render context cannot be created.
         */
-        explicit EventProcessor(const Config& config);
+        explicit EventProcessor(const EventProcessorConfig& config);
         ~EventProcessor() = default;
 
         /**
@@ -61,7 +55,7 @@ namespace wlf::evt {
          * @param message On output, populated with formatted data if successful.
          * @return true If the event was successfully rendered.
         */
-        ProcessResult process(const Context &ctx, const EventLogHandle& event_handle, EventMessageBuilder& emb) noexcept;
+        ProcessResult process(const EventProcessContext& ctx, const EventLogHandle& event_handle, EventMessageBuilder& emb) noexcept;
 
     private:
         EventRenderer _renderer;

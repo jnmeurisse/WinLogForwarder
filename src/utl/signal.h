@@ -18,7 +18,9 @@ namespace wlf::utl {
 
 		/**
 		 * Creates a signal.
-		*/
+
+         * @throw os_error.
+        */
 		explicit Signal(bool manual_reset);
 
         Signal(const Signal&) = delete;
@@ -34,35 +36,35 @@ namespace wlf::utl {
 		/**
 		 * Sets the signal to a non-signaled state.
 		 *
-		 * The method returns false if the function failed.
-		*/
-		bool reset() noexcept;
+         * @throw os_error.
+        */
+		void reset();
 
 		/**
 		 * Sets the signal to a signaled state.
 		 * 
-		 * The method returns false if the function failed. 
-		*/
-		bool set() noexcept;
+         * @throw os_error.
+        */
+		void set();
 
 		/**
 		 * Returns true if this signal is in a signaled state.
 		 *
-		 * The method raises a runtime_error if an error has occurred.
-		*/
+         * @throw os_error.
+        */
 		bool is_set() const;
 
 		/**
-		 * Waits until the event is in a signaled state.
+		 * Waits until this signal is in a signaled state.
 		 * 
-		 * The method raises a runtime_error if an error has occurred.
-		*/
-		bool wait(DWORD timeout = INFINITE) const;
+         * @throw os_error.
+        */
+		bool wait(DWORD millisec = INFINITE) const;
 
 		/**
 		 * Returns the signal handle.
 		*/
-		inline HANDLE get_handle() const noexcept { return _handle; }
+		inline HANDLE handle() const noexcept { return _handle; }
 
 	private:
 		// The event handle.

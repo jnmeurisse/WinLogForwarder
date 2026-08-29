@@ -15,7 +15,7 @@ namespace wlf::evt {
 	class EventHandle {
 	public:
 		/**
-		 * Move constructor.
+	     * Move constructor.
 		 * Transfers ownership of the handle from another instance.
 		 */
 		EventHandle(EventHandle&& other) noexcept;
@@ -39,7 +39,7 @@ namespace wlf::evt {
 		/**
 		 * Returns the underlying native handle.
 		 */
-		inline ::EVT_HANDLE get() const noexcept { return _handle; }
+		inline ::EVT_HANDLE handle() const noexcept { return _handle; }
 
 		/**
 		 * Checks whether the wrapper holds a valid (non-null) handle.

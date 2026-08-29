@@ -1,6 +1,7 @@
 #include "event_log_handle.h"
 
-#include "evt/event_error.h"
+#include <algorithm>
+#include "utl/exception.h"
 
 
 namespace wlf::evt {
@@ -12,7 +13,7 @@ namespace wlf::evt {
     }
 
 
-    bool RenderingBuffer::resize(::DWORD new_size)
+    bool RenderingBuffer::resize(::DWORD new_size) noexcept
     {
         if (new_size > _size_limit)
             return false;
@@ -23,7 +24,8 @@ namespace wlf::evt {
             _b.resize(new_size);
         }
 
-        return true;
+        // return true if the buffer size is greater than what was requested.
+        return _b.size() >= new_size;
     }
 
 
@@ -36,7 +38,7 @@ namespace wlf::evt {
         );
 
         if (!handle)
-            throw event_error("EvtCreateRenderContext error", ::GetLastError());
+            throw utl::os_error("EventRenderContext: EvtCreateRenderContext error", ::GetLastError());
 
         return EventRenderContext(handle);
     }
@@ -82,7 +84,7 @@ namespace wlf::evt {
     }
 
 
-    bool EventLogHandle::render_xml(RenderingBuffer& buffer) const
+    ::DWORD EventLogHandle::render_xml(RenderingBuffer& buffer) const
     {
         ::DWORD buffer_size = buffer.size();
         ::DWORD property_count = 0;
@@ -93,18 +95,18 @@ namespace wlf::evt {
             if (::GetLastError() == ERROR_INSUFFICIENT_BUFFER) {
                 if (!buffer.resize(buffer_size)) {
                     ::SetLastError(ERROR_BUFFER_OVERFLOW);
-                    return false;
+                    return 0;
                 }
 
                 if (!render(context, EvtRenderEventXml, buffer.data(), buffer_size, property_count))
-                    return false;
+                    return 0;
             }
             else {
-                return false;
+                return 0;
             }
         }
 
-        return true;
+        return buffer_size;
     }
 
 
@@ -114,7 +116,7 @@ namespace wlf::evt {
         ::SetLastError(ERROR_SUCCESS);
 
         return ::EvtRender(
-            context.get(),
+            context.handle(),
             _handle,
             flag,
             buffer_size,

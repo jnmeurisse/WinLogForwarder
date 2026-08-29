@@ -1,10 +1,3 @@
-/*!
-* This file is part of FortiRDP
-*
-* Copyright (C) 2022 Jean-Noel Meurisse
-* SPDX-License-Identifier: Apache-2.0
-*
-*/
 #include "endpoint.h"
 
 #include <limits>
@@ -17,7 +10,7 @@ namespace wlf::net {
 
 	Endpoint::Endpoint():
 		_hostname("0.0.0.0"),
-		_port(0)
+		_port("")
 	{
 	}
 
@@ -26,12 +19,6 @@ namespace wlf::net {
 		Endpoint()
 	{
 		init(address, default_port);
-	}
-
-
-	std::string Endpoint::to_string() const
-	{
-		return _hostname + ":" + _port;
 	}
 
 

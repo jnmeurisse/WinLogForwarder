@@ -36,7 +36,7 @@ namespace wlf::evt {
          * 
          * @return true if the new size is not greater than the maximum size.
          */
-        bool resize(::DWORD new_size);
+        bool resize(::DWORD new_size) noexcept;
 
         /**
          * Returns a pointer to the contiguous memory.  The function returns a
@@ -96,9 +96,10 @@ namespace wlf::evt {
          *
          * @param buffer A buffer to store the rendered values.
          *
-         * @return True on success, false on failure.  GetLastError returns the error code.
+         * @return The size of the buffer on success, 0 on failure.  
+         *         GetLastError returns the error code.
          */
-        bool render_xml(RenderingBuffer& buffer) const;
+        ::DWORD render_xml(RenderingBuffer& buffer) const;
 
     private:
         // Low-level helper to render this event

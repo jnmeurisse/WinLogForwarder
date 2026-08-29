@@ -1,20 +1,23 @@
 #include "event_thread.h"
+#include <utility>
+
 
 namespace wlf::evt {
 
     EventThread::EventThread(EventQueue& queue)
-        : _queue(queue)
+        : _logger(utl::Logger::instance())
+        , _queue(queue)
     {
     }
 
 
-    void EventThread::stop() noexcept
+    void EventThread::stop()
     {
-        _queue.stop();
+        return _queue.stop();
     }
 
 
-    bool EventThread::is_stopped() const
+    bool EventThread::interrupted() const
     {
         return _queue.stopped();
     }
@@ -26,13 +29,19 @@ namespace wlf::evt {
     }
 
 
-    bool EventThread::push_message(EventMessagePtr message) noexcept
+    bool EventThread::sleep(unsigned int millisec) const
+    {
+        return !_queue.stop_signal().wait(millisec);
+    }
+
+
+    bool EventThread::push_message(EventMessagePtr message)
     {
         return _queue.push(std::move(message));
     }
 
 
-    EventMessagePtr EventThread::pop_message() noexcept
+    EventMessagePtr EventThread::pop_message()
     {
         return _queue.pop();
     }

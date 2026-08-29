@@ -31,7 +31,9 @@ namespace wlf::net {
 
 	mbed_err TlsContext::set_hostname(const std::string& hostname) noexcept
 	{
-		return ::mbedtls_ssl_set_hostname(&_sslctx, hostname.c_str());
+		return ::mbedtls_ssl_set_hostname(
+            &_sslctx, 
+            hostname.length() > 0 ? hostname.c_str() : nullptr);
 	}
 
 

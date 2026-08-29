@@ -1,17 +1,14 @@
 #include "WindowsLogService.h"
 #include <iostream>
-#include "LogCollector.h"
-#include "utl/signal.h"
 
 
 // Initialize the static instance pointer
 WindowsLogService* WindowsLogService::s_instance = nullptr;
 
 
-WindowsLogService::WindowsLogService(const std::wstring& service_name, const std::wstring& display_name, wlf::LogCollector& collector)
+WindowsLogService::WindowsLogService(const std::wstring& service_name, const std::wstring& display_name)
     : _service_name(service_name)
     , _display_name(display_name)
-    , _collector(collector)
     , _status_handle(nullptr)
 {
     s_instance = this;
@@ -60,6 +57,7 @@ int WindowsLogService::run(int argc, wchar_t* argv[]) {
         std::wcout << L"Invalid usage.\n";
         return 1;
     }
+
     return 0;
 }
 
@@ -139,16 +137,13 @@ bool WindowsLogService::uninstall() {
 
 void WindowsLogService::run_interactive() {
     std::wcout << L"Running in interactive mode. Press Ctrl+C to exit...\n";
-    _collector.start();
-    _collector.wait(INFINITE);
 }
 
 
 void WINAPI WindowsLogService::ServiceMain(DWORD argc, LPTSTR* argv) {
     if (!s_instance) return;
 
-    s_instance->_status_handle = ::RegisterServiceCtrlHandlerW(s_instance->_service_name.c_str(), ServiceCtrlHandler);
-    //TODO : should I test INVALILD_HANDLE_VALUE ?
+    s_instance->_status_handle = ::RegisterServiceCtrlHandler(s_instance->_service_name.c_str(), ServiceCtrlHandler);
     if (!s_instance->_status_handle) return;
 
     s_instance->set_status(SERVICE_RUNNING);
@@ -181,12 +176,9 @@ void WindowsLogService::set_status(DWORD currentState, DWORD win32ExitCode, DWOR
 
 
 void WindowsLogService::start_service() {
-    _collector.start();
-    _collector.wait(INFINITE);
 }
 
 
 void WindowsLogService::stop_service() {
-    _collector.stop();
 }
 

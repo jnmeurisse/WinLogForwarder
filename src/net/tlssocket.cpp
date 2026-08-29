@@ -25,20 +25,19 @@ namespace wlf::net {
 
 	mbed_err TlsSocket::connect(const Endpoint& ep, const utl::Timer& timer)
 	{
-
 		mbed_err rc = TcpSocket::connect(ep, timer);
-		if (rc)
-			goto terminate;
+        if (rc) return rc;
 
 		rc = _tlsctx.configure(*_tlscfg.get_cfg(), *netctx());
-		if (rc)
-			goto terminate;
+        if (rc) return rc;
 
-		rc = _tlsctx.set_hostname(ep.hostname());
-		if (rc)
-			goto terminate;
+        if (_enable_hostname_verification) {
+            rc = _tlsctx.set_hostname(ep.hostname());
+        }
+        else {
+            rc = _tlsctx.set_hostname("");
+        }
 
-	terminate:
 		return rc;
 	}
 

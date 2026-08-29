@@ -1,8 +1,7 @@
 #include "signal.h"
 
-#include <stdexcept>
 #include <utility>
-
+#include "utl/exception.h"
 
 
 namespace wlf::utl {
@@ -12,7 +11,7 @@ namespace wlf::utl {
 
 	{
 		if (_handle == nullptr)
-			throw std::runtime_error("CreateEvent error");
+			throw utl::os_error("Signal: CreateEvent error", ::GetLastError());
 	}
 
 
@@ -42,16 +41,18 @@ namespace wlf::utl {
 	}
 
 
-	bool Signal::set() noexcept
+	void Signal::set()
 	{
-		return ::SetEvent(_handle) != 0;
+        if (::SetEvent(_handle) == 0)
+            throw utl::os_error("Signal: SetEvent error", ::GetLastError());
 	}
 
 
-	bool Signal::reset() noexcept
+	void Signal::reset()
 	{
-		return ::ResetEvent(_handle) != 0;
-	}
+		if (::ResetEvent(_handle) == 0)
+            throw utl::os_error("Signal: ResetEvent error", ::GetLastError());
+    }
 
 
 	bool Signal::is_set() const
@@ -60,9 +61,9 @@ namespace wlf::utl {
 	}
 
 
-	bool Signal::wait(DWORD timeout) const
+	bool Signal::wait(DWORD millisec) const
 	{
-		switch (::WaitForSingleObject(_handle, timeout)) {
+		switch (::WaitForSingleObject(_handle, millisec)) {
 		case WAIT_OBJECT_0: // The event is set.
 			return true;
 
@@ -70,7 +71,7 @@ namespace wlf::utl {
 			return false;
 
 		case WAIT_FAILED:
-            throw std::runtime_error("CreateEvent error");
+            throw utl::os_error("Signal: WaitForSingleObject error", ::GetLastError());
 
 		default:
 			return false;

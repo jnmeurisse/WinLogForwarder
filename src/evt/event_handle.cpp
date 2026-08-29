@@ -1,7 +1,6 @@
 #include "event_handle.h"
 
 #include <utility>
-#include "event_subscription_handle.h"
 
 
 namespace wlf::evt {

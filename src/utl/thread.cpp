@@ -1,8 +1,7 @@
 #include "thread.h"
 
-#include <stdexcept>
 #include <process.h>
-
+#include "utl/exception.h"
 
 namespace wlf::utl {
 
@@ -13,7 +12,7 @@ namespace wlf::utl {
         : _handle((HANDLE)::_beginthreadex(nullptr, 0, thread_entry_point, this, CREATE_SUSPENDED, &_id))
 	{
 		if (_handle == NULL)
-			throw std::runtime_error("_beginthreadex error");
+			throw utl::os_error("Thread::_beginthreadex error", ::GetLastError());
 	}
 
 
@@ -44,7 +43,7 @@ namespace wlf::utl {
 			return false;
 
 		case WAIT_FAILED:
-            throw std::runtime_error("WaitForSingleObject error");
+            throw utl::os_error("Thread: WaitForSingleObject error", ::GetLastError());
 
 		default:
 			return false;
@@ -61,9 +60,6 @@ namespace wlf::utl {
 		
 		if (thread) {
 			const unsigned int rc = thread->run();
-
-			delete thread;
-
 			::_endthreadex(rc);
 		}
 

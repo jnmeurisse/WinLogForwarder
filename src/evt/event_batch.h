@@ -68,7 +68,8 @@ namespace wlf::evt {
         // Helper to safely close any unconsumed handles in the current batch.
         void clear_unconsumed_events() noexcept;
 
-        // The maximum number of events to request from the OS in a single fetch call.
+        // The maximum number of events to request from the OS in a single fetch 
+        // call.
         static constexpr size_t _batch_size = 32;
 
         // The active Windows Event Log subscription handle. 

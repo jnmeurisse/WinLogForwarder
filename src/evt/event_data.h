@@ -1,3 +1,10 @@
+/*!
+* This file is part of WindowsLogForwarder
+*
+* Copyright (C) 2026 Jean-Noel Meurisse
+* SPDX-License-Identifier: GPL-3.0-only
+*
+*/
 #pragma once
 
 #define WIN32_LEAN_AND_MEAN
@@ -53,8 +60,6 @@ namespace wlf::evt
         ::PSID user_id = nullptr;                   // EvtSystemUserID              :EvtVarTypeSid
         std::optional<uint8_t> version;             // EvtSystemVersion             :EvtVarTypeUInt8
     };
-
-
 
     /**
      * Data extracted from a Windows Event Log record.

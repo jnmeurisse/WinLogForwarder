@@ -17,7 +17,7 @@ namespace wlf::evt {
 	 * @param event The parsed event instance.
 	 * @return true if the event was processed successfully, false otherwise.
 	 */
-	using EventHandlerCallback = std::function<ProcessResult(const EventProcessor::Context& ctx, const EventLogHandle& event)>;
+	using EventHandlerCallback = std::function<ProcessResult(const EventProcessContext& ctx, const EventLogHandle& event)>;
 
 
 	/**
@@ -30,35 +30,23 @@ namespace wlf::evt {
 	 */
 	class EventSubscription {
 	public:
-		/**
-		 * Configuration options for the Event Log subscription.
-		 */
-		struct Config
-		{
-			// The event channel to subscribe to (e.g., L"Application").
-			std::wstring channel;
-
-            // 
-            EventIdFilter selected_event_id;
-
-			//
-			EventProcessor::Context processing_context;
-		};
-
-
 		EventSubscription() = delete;
 
 		/**
 		 * Creates a new Event Log subscription.
 		 * 
-		 * @param options The channel and query configuration for the subscription.
 		 */
-		EventSubscription(const Config& options);
+		EventSubscription(const std::string& id, const std::wstring& channel,
+            const std::wstring& query, const EventProcessContext& process_context);
 		
 		/**
 		 * Closes the underlying EVT_HANDLE.
 		 */
 		~EventSubscription() = default;
+
+        /**
+        */
+        inline const std::string id() const noexcept { return _id; }
 
 		/**
 		 * Indicates the result of a drain operation.
@@ -81,7 +69,7 @@ namespace wlf::evt {
 		 * @param handler The callback executed for each successfully fetched event.
 		 * @return The status of the drain loop (Continue, Completed, Cancelled, or Failed).
 		 */
-		DrainResult drain(const EventHandlerCallback& handler) noexcept;
+		DrainResult drain(const EventHandlerCallback& handler);
 
 		/**
 		 * Cancels the active event subscription.
@@ -135,6 +123,9 @@ namespace wlf::evt {
 		const utl::Signal& get_signal() const noexcept { return _signal; }
 
 	private:
+        // The id of this subscription
+        const std::string _id;
+
 		// A signal raised when new events are available.
 		utl::Signal _signal;
 
@@ -142,7 +133,7 @@ namespace wlf::evt {
 		EventSubscriptionHandle _subscription;
 
 		// 
-		const EventProcessor::Context _processor_context;
+		const EventProcessContext _process_context;
 
 		// Indicates whether the subscription has been drained of all available events.
 		bool _drained = false;

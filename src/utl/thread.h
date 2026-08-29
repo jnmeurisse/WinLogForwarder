@@ -40,6 +40,8 @@ namespace wlf::utl {
 		 * 
 		 * The function returns true if the thread has finished and false if
 		 * the thread is still running after the specified time.
+         * 
+         * @throw os_error
 		*/
 		bool wait(DWORD timeout);
 
@@ -51,7 +53,7 @@ namespace wlf::utl {
 		/**
 		 * Returns the thread handle
 		*/
-		inline HANDLE get_handle() const noexcept { return _handle; }
+		inline HANDLE handle() const noexcept { return _handle; }
 
 	protected:
 		virtual unsigned int run() = 0;

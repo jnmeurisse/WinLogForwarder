@@ -13,6 +13,6 @@ namespace wlf::evt {
 		virtual bool filter(const EventData& event_data, EventMessageBuilder& emb) const noexcept;
 	};
 
-	using IEventFilter = std::shared_ptr<EventFilter>;
+	using EventFilterPtr = std::shared_ptr<EventFilter>;
 
 }	

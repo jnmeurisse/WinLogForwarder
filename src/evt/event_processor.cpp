@@ -1,31 +1,30 @@
 #include "event_processor.h"
 
+#include "evt/event_renderer.h"
+#include "event_data.h"
+
 
 namespace wlf::evt {
 
-	EventProcessor::EventProcessor(const Config& config)
-        : _renderer(config.rendering_buffer_size, config.user_cache, config.selected_event_id)
+	EventProcessor::EventProcessor(const EventProcessorConfig& config)
+        : _renderer(EventRenderer::BufferSize{
+                config.system_data_buffer_size_limit,
+                config.event_data_buffer_size_limit}, config.user_cache)
 	{
 	}
 
 
-    ProcessResult EventProcessor::process(const Context& ctx, const EventLogHandle& event_handle, EventMessageBuilder& emb) noexcept
+    ProcessResult EventProcessor::process(const EventProcessContext& ctx, const EventLogHandle& elh, EventMessageBuilder& emb) noexcept
 	{
 		// event_data acts as an ephemeral view into system properties stored into
 		// the renderer memory.
 		EventData event_data;
 
-        RenderStatus status;
-
 		// Extract system and xml data from the event
-        status = _renderer.render_event(event_handle, event_data);
+        const RenderStatus status = _renderer.render_event(elh, event_data);
         if (status == RenderStatus::Failed)
             // Failed to extract data
             return ProcessResult::Failed;
-
-        else if (status == RenderStatus::Filtered)
-            // Event is not selected
-            return ProcessResult::Filtered;
 
         else {
             // Apply filtering logic if set

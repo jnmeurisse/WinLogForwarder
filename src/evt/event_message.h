@@ -12,7 +12,7 @@
 
 
 namespace wlf::evt {
-    constexpr size_t max_fragment_size = 512;
+    constexpr size_t max_fragment_size = 4;
 
     /**
      * Represents an event message composed of fragmented character buffers.
@@ -21,8 +21,7 @@ namespace wlf::evt {
 	public:
 
 		/**
-		 * Represents a fragment of an event message.  A fragment is a 
-         * sequence of valid utf-8 characters.
+		 * Represents a fragment of an event message.
 		 */
 		class Fragment {
 		public:
@@ -46,7 +45,7 @@ namespace wlf::evt {
             /**
              * Returns the amount of free space remaining in the fragment.
              */
-			inline size_t free_space() const noexcept { return _capacity - size(); }
+			inline size_t free_space() const noexcept { return _capacity - _size; }
 
             /**
              * Returns the current number of characters stored in the fragment.
@@ -98,8 +97,8 @@ namespace wlf::evt {
         // The Collection of message fragments
 		FragmentList _fragments;
 
-        // Allocates a message with an empty fragment.
-        EventMessage();
+        // Allocates a message with an initial fragment of the given capacity.
+        EventMessage(size_t capacity);
 	};
 
 	using EventMessagePtr = std::unique_ptr<EventMessage> ;
@@ -114,19 +113,18 @@ namespace wlf::evt {
         class Savepoint {
         public:
             Savepoint(EventMessageBuilder& builder) noexcept;
+            Savepoint(const Savepoint&) = delete;
             ~Savepoint();
 
             /**
-             * Commits changes in the message builder if the remaining
-             * free space is greater then 'free_space'. 
-             * 
+             * Commits changes in the message builder.
              * @return true if the changes have been committed.
              */
-            bool commit(size_t free_space) noexcept;
+            bool commit() noexcept;
 
         private:
             EventMessageBuilder& _builder;
-            bool _commited;
+            bool _committed;
         };
 
         /**
@@ -135,14 +133,25 @@ namespace wlf::evt {
         explicit EventMessageBuilder(size_t capacity);
 
         /**
-         * Writes a sequence of UTF-8 characters to the message builder.
+         * Writes a sequence of characters to the message builder.
          * 
          * @param str A sequence of characters.
          * @param size The number of characters in the given string buffer.
-         * @return true if successful; false if truncated or the sequence of
-         * characters contains an invalid utf-8/wchar character.
+         * @return true if successful; false if buffer is full.
          */
 		bool write_chars(const char8_t* str, size_t size);
+
+        /**
+         * Append UTF-16 characters converted to UTF-8.
+         *
+         * The input is interpreted as UTF-16 code units. The input must contain
+         * valid UTF-16; malformed surrogate sequences cause the operation to fail.
+         *
+         * The conversion is performed incrementally using a fixed-size temporary
+         * buffer, so the function does not allocate dynamically.
+         * @return true if successful; false if buffer is full or if the input
+         *         is malformed. 
+         */
         bool write_chars(const wchar_t* str, size_t size);
 
         /**
@@ -156,8 +165,7 @@ namespace wlf::evt {
          * Appends a sequence of UTF-8 characters from a string view into
          * the message builder.
          * 
-         * @return true if successful; false if truncated or the sequence of
-         * characters contains an invalid utf-8/wchar character.
+         * @return true if successful; false if buffer is full.
          */
         bool append(std::u8string_view strv);
         bool append(std::wstring_view strv);
@@ -174,20 +182,20 @@ namespace wlf::evt {
          * Formats a Windows SYSTEMTIME structure into an ISO-8601 UTC string
          *         (YYYY-MM-DDTHH:MM:SS.mmmZ) and appends it.
          * @return true if successfully formatted and appended; false if
-                   truncated.
+                   buffer is full.
          */
         bool append(const ::SYSTEMTIME& st) noexcept;
 
         /**
          * Formats and appends a GUID as an ASCII string.
-         * @return true if successfully formatted and appended; false if
-         *         truncated.
+         * @return false if truncated, true in all other cases even if
+         *         the GUID can not be converted.
          */
         bool append(const ::GUID* guid) noexcept;
 
         /**
          * Appends the contents of another EventMessage.
-         * @return true if successful; false if truncated.
+         * @return true if successful; false if buffer is full.
          */
         bool append(const EventMessage& message) noexcept;
 
@@ -220,8 +228,8 @@ namespace wlf::evt {
         FragmentList::iterator _savepoint;
         size_t _offset;
 
-        // Append a new fragment having at least 'min_size' bytes
-		bool append_fragment(size_t min_size);
+        // Append a new fragment.  Returns false if buffer is full.
+		bool append_fragment();
 
         // Commit pending changes
         void commit() noexcept;

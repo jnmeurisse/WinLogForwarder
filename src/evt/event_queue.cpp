@@ -1,6 +1,9 @@
 #include "event_queue.h"
 
 #include <cassert>
+#include <stdexcept>
+#include <mutex>
+#include <utility>
 
 
 namespace wlf::evt {
@@ -14,10 +17,12 @@ namespace wlf::evt {
 		, _head(0)
 		, _tail(0)
 	{
+        if (_capacity == 0)
+            throw std::invalid_argument("EventQueue: invalid capacity");
 	}
 
 
-	bool EventQueue::push(EventMessagePtr message) noexcept
+	bool EventQueue::push(EventMessagePtr message)
 	{
         assert(message);
 		std::unique_lock<std::mutex> lock(_mutex);
@@ -40,7 +45,7 @@ namespace wlf::evt {
 	}
 
 
-	EventMessagePtr EventQueue::pop() noexcept
+	EventMessagePtr EventQueue::pop()
 	{
 		std::unique_lock<std::mutex> lock(_mutex);
 
@@ -61,26 +66,20 @@ namespace wlf::evt {
 	}
 
 
-	void EventQueue::stop() noexcept
+	void EventQueue::stop()
 	{
 		std::lock_guard<std::mutex> lock(_mutex);
-		_stop_signal.set();
-		_cv_space_available.notify_all();
+        _stop_signal.set();
+
+        // wake up producers and consumer. 
+        _cv_space_available.notify_all();
 		_cv_event_available.notify_all();
 	}
 
 
-	bool EventQueue::can_push() const noexcept
-	{
-		std::lock_guard<std::mutex> lock(_mutex);
-		return _count < _capacity;
-	}
-
-
-	bool EventQueue::can_pop() const noexcept
-	{
-		std::lock_guard<std::mutex> lock(_mutex);
-		return _count > 0;
-	}
+    bool EventQueue::stopped() const
+    {
+        return _stop_signal.is_set();
+    }
 
 }

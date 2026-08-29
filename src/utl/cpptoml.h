@@ -60,7 +60,7 @@ template <class T>
 class option
 {
   public:
-    option() : empty_{true}
+    option() : empty_{ true }, value_{}
     {
         // nothing
     }
@@ -3217,7 +3217,7 @@ class parser
  * Utility function to parse a file as a TOML file. Returns the root table.
  * Throws a parse_exception if the file cannot be opened.
  */
-inline std::shared_ptr<table> parse_file(const std::string& filename)
+inline std::shared_ptr<table> parse_file(const std::wstring& filename)
 {
 #if defined(BOOST_NOWIDE_FSTREAM_INCLUDED_HPP)
     boost::nowide::ifstream file{filename.c_str()};
@@ -3227,7 +3227,7 @@ inline std::shared_ptr<table> parse_file(const std::string& filename)
     std::ifstream file{filename};
 #endif
     if (!file.is_open())
-        throw parse_exception{filename + " could not be opened for parsing"};
+        throw parse_exception{"could not open file for parsing"};
     parser p{file};
     return p.parse();
 }

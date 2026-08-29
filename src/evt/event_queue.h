@@ -12,21 +12,22 @@ namespace wlf::evt {
 	/**
 	 * @class EventQueue
 	 *
-	 * A thread-safe, bounded circular ring-buffer for rendering and storing
-	 * Windows Event Log Messages, supporting multiple concurrent producers
-	 * and a single consumer.
-	 *
+	 * A thread-safe, bounded circular ring-buffer for storing
+	 * Windows Event Log Messages, supporting multiple concurrent 
+     * producers and a single consumer.
 	 */
 	class EventQueue {
 	public:
 		/**
-		 * Constructs the event queue with a fixed number messages.
+		 * Constructs an event queue that can hold a fixed number messages.
 		 *
 		 * @param capacity Maximum number of events the queue can hold.
+         * @throw invalid_argument if capacity is null.
+         * @throw os_error if stop signal can not be allocated.
 		 */
 		explicit EventQueue(size_t capacity);
 
-		// Prevent copying and moving
+		// Prevent copying and moving the queue
 		EventQueue(const EventQueue&) = delete;
 		EventQueue& operator=(const EventQueue&) = delete;
 		EventQueue(EventQueue&&) = delete;
@@ -42,42 +43,45 @@ namespace wlf::evt {
          * 
 		 * @param message The message to append to the queue.
 		 * @return false if the queue is stopped.
-		 */
+         * 
+         * @throw os_error If an OS error occurred when checking the stop signal.
+         */
 		[[nodiscard]]
-		bool push(EventMessagePtr message) noexcept;
+		bool push(EventMessagePtr message);
 
 		/**
-		 * Removes the oldest item from the head of the queue.
+		 * Removes the oldest item from the head of the queue.  The function waits
+         * until there is a message in the queue.
          * 
          * @return a null pointer if the queue is stopped.
-		 */
+         * @throw os_error If an OS error occurred when checking the stop signal.
+         */
 		[[nodiscard]]
-		EventMessagePtr pop() noexcept;
+		EventMessagePtr pop();
 
 		/** 
-		 * Signals that the queue is shutting down.
+		 * Signals that the queue must stop.  All push and pop will fail
+         * once the queue is in stopped state.
+         * 
+         * @throw os_error If an OS error occurred when setting the stop signal.
 		 */
-		void stop() noexcept;
-
-		// -------------------------------------------------------------------------
-		// Capacity queries
-		// -------------------------------------------------------------------------
-
-		/**
-		 * Returns true if at least one slot is currently available.
-		 */
-		bool can_push() const noexcept;
-
-		/**
-		 * Returns true if a message can be popped immediately by the consumer.
-		 */
-		bool can_pop() const noexcept;
+		void stop();
 
 		// -------------------------------------------------------------------------
 		// Stopped signals and state
 		// -------------------------------------------------------------------------
+
+		/**
+		 * @return a reference to the stop signal. 
+		 */
 		inline utl::Signal& stop_signal() noexcept { return _stop_signal; }
-		inline bool stopped() const { return _stop_signal.is_set(); }
+
+        /**
+         * @return True if the stop signal was signaled.
+         * 
+         * @throw os_error If an OS error occurred when setting the stop signal.
+         */
+        bool stopped() const;
 
 	private:
 		// Guards all access to this queue's mutable state.
@@ -90,7 +94,7 @@ namespace wlf::evt {
 
 		// Contiguous ring buffer of pointers to EventMessage.
         const size_t _capacity;
-        std::unique_ptr < EventMessagePtr[]> _buffer;
+        std::unique_ptr <EventMessagePtr[]> _buffer;
 
 		// Number of slots currently occupied.
 		size_t _count;
@@ -99,7 +103,7 @@ namespace wlf::evt {
 		size_t _head;
 
 		// Index one past the most recently reserved slot.
-		size_t _tail; 
+		size_t _tail;
 	};
 
 }

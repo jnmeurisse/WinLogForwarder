@@ -5,15 +5,17 @@
 
 namespace wlf::evt {
 
-	EventSubscription::EventSubscription(const Config& config)
-		: _signal(true)
-		, _subscription(EventSubscriptionHandle::create(_signal, config.channel, L"*"))
-		, _processor_context(config.processing_context)
+	EventSubscription::EventSubscription(const std::string& id, 
+        const std::wstring& channel, const std::wstring& query, const EventProcessContext& process_context)
+		: _id(id)
+        , _signal(true)
+		, _subscription(EventSubscriptionHandle::create(_signal, channel, query))
+		, _process_context(process_context)
 	{
 	}
 
 
-	EventSubscription::DrainResult EventSubscription::drain(const EventHandlerCallback& handler) noexcept
+	EventSubscription::DrainResult EventSubscription::drain(const EventHandlerCallback& handler)
 	{
 		_stats.drain_count++;
 
@@ -40,7 +42,7 @@ namespace wlf::evt {
 			// The handler could return false if it fails to format the event
 			// log or if it encounters an error during processing.
 			while (auto event = batch.next()) {
-                const ProcessResult result = handler(_processor_context, event);
+                const ProcessResult result = handler(_process_context, event);
                 if (result == ProcessResult::Filtered)
                     ++_stats.event_filtered_count;
                 else if (result == ProcessResult::Failed)

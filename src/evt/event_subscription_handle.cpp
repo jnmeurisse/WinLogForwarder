@@ -1,6 +1,6 @@
 #include "event_subscription_handle.h"
 
-#include "evt/event_error.h"
+#include "utl/exception.h"
 
 
 namespace wlf::evt {
@@ -9,7 +9,7 @@ namespace wlf::evt {
     {
         const ::EVT_HANDLE handle = ::EvtSubscribe(
             nullptr,
-            signal.get_handle(),
+            signal.handle(),
             channel.c_str(),
             query.c_str(),
             nullptr,
@@ -19,7 +19,7 @@ namespace wlf::evt {
         );
 
         if (!handle)
-            throw event_error("EvtSubscribe error", ::GetLastError());
+            throw utl::os_error("EventSubscriptionHandle: EvtSubscribe error", ::GetLastError());
 
         return EventSubscriptionHandle(handle);
     }
@@ -28,13 +28,13 @@ namespace wlf::evt {
     bool EventSubscriptionHandle::next(std::span<::EVT_HANDLE> event_handles, ::DWORD timeout, ::DWORD& count) const noexcept
     {
         const DWORD events_size = static_cast<DWORD>(event_handles.size());
-        return ::EvtNext(_handle, events_size, event_handles.data(), timeout, 0, &count);
+        return ::EvtNext(_handle, events_size, event_handles.data(), timeout, 0, &count) == TRUE;
     }
 
 
     bool EventSubscriptionHandle::cancel() const noexcept
     {
-        return ::EvtCancel(_handle);
+        return ::EvtCancel(_handle) == TRUE;
     }
 
 }
