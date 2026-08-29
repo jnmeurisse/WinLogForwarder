@@ -1,3 +1,10 @@
+/*!
+* This file is part of WindowsLogForwarder
+*
+* Copyright (C) 2026 Jean-Noel Meurisse
+* SPDX-License-Identifier: GPL-3.0-only
+*
+*/
 #include "tlssocket.h"
 
 

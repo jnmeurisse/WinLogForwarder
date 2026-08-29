@@ -1,16 +1,23 @@
-
+/*!
+* This file is part of WindowsLogForwarder
+*
+* Copyright (C) 2026 Jean-Noel Meurisse
+* SPDX-License-Identifier: GPL-3.0-only
+*
+*/
 #pragma once
 
-#include <string>
 #include <mbedtls/x509_crt.h>
 #include "net/TlsContext.h"
 #include "net/TlsConfig.h"
 #include "net/tcpsocket.h"
 #include "net/endpoint.h"
+#include <utl/timer.h>
 
 
 namespace wlf::net {
-	/**
+
+    /**
 	 * The client side of a network TLS socket
 	*/
 	class TlsSocket : public TcpSocket

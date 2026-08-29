@@ -1,10 +1,16 @@
+/*!
+* This file is part of WindowsLogForwarder
+*
+* Copyright (C) 2026 Jean-Noel Meurisse
+* SPDX-License-Identifier: GPL-3.0-only
+*/
 #include "ctrlchandler.h"
 
 #include <Windows.h>
 
-#include <stdexcept>
-#include "utl/exception.h"
 #include <utility>
+#include "utl/exception.h"
+
 
 static wlf::utl::ctrlc_cb interrupt_callback;
 

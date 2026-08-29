@@ -1,7 +1,14 @@
+/*!
+* This file is part of WindowsLogForwarder
+*
+* Copyright (C) 2026 Jean-Noel Meurisse
+* SPDX-License-Identifier: GPL-3.0-only
+*
+*/
 #include "event_processor.h"
 
 #include "evt/event_renderer.h"
-#include "event_data.h"
+#include "evt/event_data.h"
 
 
 namespace wlf::evt {

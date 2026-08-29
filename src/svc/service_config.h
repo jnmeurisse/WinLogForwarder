@@ -1,3 +1,10 @@
+/*!
+* This file is part of WindowsLogForwarder
+*
+* Copyright (C) 2026 Jean-Noel Meurisse
+* SPDX-License-Identifier: GPL-3.0-only
+*
+*/
 #pragma once
 
 #include <map>
@@ -28,7 +35,7 @@ namespace wlf::svc {
         // associated with an event.
         size_t max_event_data_buffer_size = 0;
 
-        // Default Structured Data parameter size limit. 
+        // Default rfc5424 Structured Data parameter size limit. 
         // Formatters can override this value.
         size_t max_syslog_sd_length_default = 0;
 

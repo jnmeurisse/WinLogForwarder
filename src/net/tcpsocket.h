@@ -1,7 +1,12 @@
-
+/*!
+* This file is part of WindowsLogForwarder
+*
+* Copyright (C) 2026 Jean-Noel Meurisse
+* SPDX-License-Identifier: GPL-3.0-only
+*
+*/
 #pragma once
 
-#include <cstdint>
 #include "utl/timer.h"
 #include "net/endpoint.h"
 #include "net/socket.h"

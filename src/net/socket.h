@@ -1,8 +1,8 @@
 /*!
-* This file is part of FortiRDP
+* This file is part of WindowsLogForwarder
 *
-* Copyright (C) 2022 Jean-Noel Meurisse
-* SPDX-License-Identifier: Apache-2.0
+* Copyright (C) 2026 Jean-Noel Meurisse
+* SPDX-License-Identifier: GPL-3.0-only
 *
 */
 #pragma once
