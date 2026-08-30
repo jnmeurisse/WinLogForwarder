@@ -9,7 +9,7 @@
 
 namespace wlf::evt {
 
-	bool EventFilter::filter(const EventData& event_data, EventMessageBuilder& emb) const noexcept
+	bool EventFilter::filter(const EventData& event_data) const noexcept
 	{
 		return false;
 	}

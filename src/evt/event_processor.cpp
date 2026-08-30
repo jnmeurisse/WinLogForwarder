@@ -35,7 +35,7 @@ namespace wlf::evt {
 
         else {
             // Apply filtering logic if set
-            if (ctx.filter && ctx.filter->filter(event_data, emb))
+            if (ctx.filter && ctx.filter->filter(event_data))
                 // Event is rejected
                 return ProcessResult::Filtered;
 
