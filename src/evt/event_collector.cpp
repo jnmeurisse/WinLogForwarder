@@ -2,6 +2,8 @@
 
 #include <array>
 #include <memory>
+
+#include "evt/event_rfc5424_formatter.h"
 #include "utl/exception.h"
 #include "utl/string.h"
 
