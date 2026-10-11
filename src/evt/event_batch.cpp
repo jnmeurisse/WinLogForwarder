@@ -8,6 +8,7 @@
 #include "event_batch.h"
 
 #include <span>
+#include <utility>
 
 
 namespace wlf::evt {
@@ -50,10 +51,7 @@ namespace wlf::evt {
 
 		// Extract the handle, nullify the array entry to prevent the destructor 
 		// from closing it, and transfer ownership to the caller.
-		EventLogHandle event{ _events[_next] };
-		_events[_next++] = nullptr;
-
-		return event;
+        return EventLogHandle(std::exchange<::EVT_HANDLE>(_events[_next++], nullptr));
 	}
 
 
